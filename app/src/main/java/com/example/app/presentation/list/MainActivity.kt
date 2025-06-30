@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.app.R
-import com.example.app.data.repository.InMemoryRecipeRepository
+import com.example.app.ServiceLocator
 import com.example.app.domain.usecase.GetRecipesUseCase
 import com.example.app.presentation.detail.RecipeDetailActivity
 
@@ -19,8 +19,7 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                val repo = InMemoryRecipeRepository()
-                val useCase = GetRecipesUseCase(repo)
+                val useCase = GetRecipesUseCase(ServiceLocator.recipeRepository)
                 @Suppress("UNCHECKED_CAST")
                 return MainViewModel(useCase) as T
             }

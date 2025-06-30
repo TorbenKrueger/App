@@ -7,7 +7,7 @@ import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
-import com.example.app.data.repository.InMemoryRecipeRepository
+import com.example.app.ServiceLocator
 import com.example.app.domain.usecase.GetRecipeUseCase
 
 /**
@@ -18,8 +18,7 @@ class RecipeDetailActivity : AppCompatActivity() {
     private val viewModel: RecipeDetailViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                val repo = InMemoryRecipeRepository()
-                val useCase = GetRecipeUseCase(repo)
+                val useCase = GetRecipeUseCase(ServiceLocator.recipeRepository)
                 @Suppress("UNCHECKED_CAST")
                 return RecipeDetailViewModel(useCase) as T
             }

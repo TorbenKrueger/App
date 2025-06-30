@@ -6,7 +6,7 @@ import android.widget.EditText
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
-import com.example.app.data.repository.InMemoryRecipeRepository
+import com.example.app.ServiceLocator
 import com.example.app.domain.model.Ingredient
 import com.example.app.domain.model.Recipe
 import com.example.app.domain.model.Step
@@ -21,8 +21,7 @@ class AddRecipeActivity : AppCompatActivity() {
     private val viewModel: AddRecipeViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                val repo = InMemoryRecipeRepository()
-                val useCase = AddRecipeUseCase(repo)
+                val useCase = AddRecipeUseCase(ServiceLocator.recipeRepository)
                 @Suppress("UNCHECKED_CAST")
                 return AddRecipeViewModel(useCase) as T
             }
