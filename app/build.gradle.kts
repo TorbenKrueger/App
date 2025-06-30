@@ -4,6 +4,8 @@ plugins {
 }
 
 android {
+    // Required as of AGP 8 to define the package namespace
+    namespace = "com.example.app"
     compileSdk = 34
 
     defaultConfig {
