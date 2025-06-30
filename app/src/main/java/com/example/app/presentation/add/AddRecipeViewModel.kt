@@ -7,9 +7,9 @@ import com.example.app.domain.usecase.AddRecipeUseCase
 /**
  * ViewModel for creating a new recipe.
  */
-class AddRecipeViewModel(private val addRecipe: AddRecipeUseCase) : ViewModel() {
+class AddRecipeViewModel(private val addRecipeUseCase: AddRecipeUseCase) : ViewModel() {
 
     fun addRecipe(recipe: Recipe) {
-        addRecipe.invoke(recipe)
+        addRecipeUseCase.invoke(recipe)
     }
 }
