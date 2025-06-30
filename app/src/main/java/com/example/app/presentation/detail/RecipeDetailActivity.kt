@@ -60,13 +60,7 @@ class RecipeDetailActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.update_servings).setOnClickListener {
             val servingsInput = findViewById<EditText>(R.id.servings_input)
             val newServings = servingsInput.text.toString().toIntOrNull() ?: return@setOnClickListener
-            viewModel.recipe.value?.let { current ->
-                viewModel.loadRecipe(current.id)
-                viewModel.recipe.value?.let {
-                    val updated = it.copy(servings = newServings)
-                    viewModel.recipe.value = updated
-                }
-            }
+            viewModel.updateServings(newServings)
         }
 
         viewModel.loadRecipe(id)
