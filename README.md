@@ -1,6 +1,6 @@
-# Android 16 App
+# Android 19 App
 
-This repository contains a minimal Android application that targets API 16.
+This repository contains a minimal Android application that targets API 19.
 
 ## Modules
 - `app`: main application module
