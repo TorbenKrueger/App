@@ -19,4 +19,11 @@ class RecipeDetailViewModel(
     fun loadRecipe(id: Int) {
         _recipe.value = getRecipe(id)
     }
+
+    /**
+     * Updates the current recipe with a new servings count.
+     */
+    fun updateServings(newServings: Int) {
+        _recipe.value = _recipe.value?.copy(servings = newServings)
+    }
 }
