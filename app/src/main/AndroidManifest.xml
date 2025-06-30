@@ -10,7 +10,9 @@
 
         <activity android:name="com.example.app.presentation.add.AddRecipeActivity" />
         <activity android:name="com.example.app.presentation.detail.RecipeDetailActivity" />
-        <activity android:name="com.example.app.presentation.list.MainActivity">
+        <activity
+            android:name="com.example.app.presentation.list.MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
