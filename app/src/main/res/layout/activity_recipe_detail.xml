@@ -54,6 +54,12 @@
             android:text="Edit" />
 
         <Button
+            android:id="@+id/delete_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Delete" />
+
+        <Button
             android:id="@+id/back_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
