@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
 import com.example.app.ServiceLocator
 import com.example.app.domain.usecase.GetRecipeUseCase
+import com.example.app.domain.usecase.DeleteRecipeUseCase
 import com.example.app.presentation.add.AddRecipeActivity
 import com.example.app.domain.model.Step
 
@@ -22,9 +23,10 @@ class RecipeDetailActivity : AppCompatActivity() {
     private val viewModel: RecipeDetailViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                val useCase = GetRecipeUseCase(ServiceLocator.recipeRepository)
+                val get = GetRecipeUseCase(ServiceLocator.recipeRepository)
+                val delete = DeleteRecipeUseCase(ServiceLocator.recipeRepository)
                 @Suppress("UNCHECKED_CAST")
-                return RecipeDetailViewModel(useCase) as T
+                return RecipeDetailViewModel(get, delete) as T
             }
         }
     }
@@ -65,6 +67,11 @@ class RecipeDetailActivity : AppCompatActivity() {
             val intent = Intent(this, AddRecipeActivity::class.java)
             intent.putExtra(AddRecipeActivity.EXTRA_RECIPE_ID, id)
             startActivity(intent)
+        }
+
+        findViewById<Button>(R.id.delete_button).setOnClickListener {
+            viewModel.deleteRecipe(id)
+            finish()
         }
 
         findViewById<Button>(R.id.back_button).setOnClickListener { finish() }

@@ -85,4 +85,8 @@ class InMemoryRecipeRepository : RecipeRepository {
             recipes[index] = recipe
         }
     }
+
+    override fun deleteRecipe(id: Int) {
+        recipes.removeAll { it.id == id }
+    }
 }

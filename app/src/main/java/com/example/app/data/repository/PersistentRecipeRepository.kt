@@ -44,6 +44,13 @@ class PersistentRecipeRepository(private val context: Context) : RecipeRepositor
         }
     }
 
+    override fun deleteRecipe(id: Int) {
+        val changed = recipes.removeAll { it.id == id }
+        if (changed) {
+            save()
+        }
+    }
+
     private fun load() {
         try {
             val jsonStr = context.openFileInput(fileName).bufferedReader().use { it.readText() }
@@ -61,6 +68,56 @@ class PersistentRecipeRepository(private val context: Context) : RecipeRepositor
         val array = JSONArray()
         recipes.forEach { array.put(it.toJson()) }
         context.openFileOutput(fileName, Context.MODE_PRIVATE).use { it.write(array.toString().toByteArray()) }
+    }
+    private fun addSampleRecipes() {
+        val flour = Ingredient("Flour", "g", 100.0)
+        val egg = Ingredient("Egg", "pcs", 1.0)
+        val milk = Ingredient("Milk", "ml", 150.0)
+
+        val pancakeSteps = listOf(
+            Step(
+                "Mix ingredients",
+                listOf(
+                    StepIngredient(flour, 100.0),
+                    StepIngredient(egg, 1.0),
+                    StepIngredient(milk, 150.0)
+                )
+            ),
+            Step("Bake in pan", emptyList())
+        )
+
+        recipes += Recipe(
+            id = 1,
+            name = "Pancakes",
+            imageRes = android.R.drawable.ic_menu_gallery,
+            servings = 2,
+            ingredients = listOf(flour, egg, milk),
+            steps = pancakeSteps
+        )
+
+        val pasta = Ingredient("Pasta", "g", 100.0)
+        val tomato = Ingredient("Tomato", "pcs", 2.0)
+        val cheese = Ingredient("Cheese", "g", 50.0)
+
+        val pastaSteps = listOf(
+            Step("Cook pasta", listOf(StepIngredient(pasta, 100.0))),
+            Step(
+                "Add sauce",
+                listOf(
+                    StepIngredient(tomato, 2.0),
+                    StepIngredient(cheese, 50.0)
+                )
+            )
+        )
+
+        recipes += Recipe(
+            id = 2,
+            name = "Pasta",
+            imageRes = android.R.drawable.ic_menu_gallery,
+            servings = 1,
+            ingredients = listOf(pasta, tomato, cheese),
+            steps = pastaSteps
+        )
     }
 }
 
@@ -148,54 +205,4 @@ private fun JSONObject.toRecipe(): Recipe {
     )
 }
 
-private fun PersistentRecipeRepository.addSampleRecipes() {
-    val flour = Ingredient("Flour", "g", 100.0)
-    val egg = Ingredient("Egg", "pcs", 1.0)
-    val milk = Ingredient("Milk", "ml", 150.0)
-
-    val pancakeSteps = listOf(
-        Step(
-            "Mix ingredients",
-            listOf(
-                StepIngredient(flour, 100.0),
-                StepIngredient(egg, 1.0),
-                StepIngredient(milk, 150.0)
-            )
-        ),
-        Step("Bake in pan", emptyList())
-    )
-
-    recipes += Recipe(
-        id = 1,
-        name = "Pancakes",
-        imageRes = android.R.drawable.ic_menu_gallery,
-        servings = 2,
-        ingredients = listOf(flour, egg, milk),
-        steps = pancakeSteps
-    )
-
-    val pasta = Ingredient("Pasta", "g", 100.0)
-    val tomato = Ingredient("Tomato", "pcs", 2.0)
-    val cheese = Ingredient("Cheese", "g", 50.0)
-
-    val pastaSteps = listOf(
-        Step("Cook pasta", listOf(StepIngredient(pasta, 100.0))),
-        Step(
-            "Add sauce",
-            listOf(
-                StepIngredient(tomato, 2.0),
-                StepIngredient(cheese, 50.0)
-            )
-        )
-    )
-
-    recipes += Recipe(
-        id = 2,
-        name = "Pasta",
-        imageRes = android.R.drawable.ic_menu_gallery,
-        servings = 1,
-        ingredients = listOf(pasta, tomato, cheese),
-        steps = pastaSteps
-    )
-}
 
