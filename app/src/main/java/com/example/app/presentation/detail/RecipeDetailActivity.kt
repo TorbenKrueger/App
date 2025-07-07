@@ -5,11 +5,14 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.content.Intent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
 import com.example.app.ServiceLocator
 import com.example.app.domain.usecase.GetRecipeUseCase
+import com.example.app.presentation.add.AddRecipeActivity
+import com.example.app.domain.model.Step
 
 /**
  * Displays details for a selected recipe.
@@ -47,14 +50,8 @@ class RecipeDetailActivity : AppCompatActivity() {
             stepLayout.removeAllViews()
             recipe.steps.forEach { step ->
                 val stepTv = TextView(this)
-                stepTv.text = step.description
+                stepTv.text = formatStep(step, recipe.servings)
                 stepLayout.addView(stepTv)
-                step.ingredients.forEach { si ->
-                    val ingTv = TextView(this)
-                    val amount = si.amountPerServing * recipe.servings
-                    ingTv.text = "- ${si.ingredient.name}: $amount ${si.ingredient.unit}"
-                    stepLayout.addView(ingTv)
-                }
             }
         }
 
@@ -64,9 +61,25 @@ class RecipeDetailActivity : AppCompatActivity() {
             viewModel.updateServings(newServings)
         }
 
+        findViewById<Button>(R.id.edit_button).setOnClickListener {
+            val intent = Intent(this, AddRecipeActivity::class.java)
+            intent.putExtra(AddRecipeActivity.EXTRA_RECIPE_ID, id)
+            startActivity(intent)
+        }
+
         findViewById<Button>(R.id.back_button).setOnClickListener { finish() }
 
         viewModel.loadRecipe(id)
+    }
+
+    private fun formatStep(step: Step, servings: Int): String {
+        var text = step.description
+        step.ingredients.forEach { si ->
+            val token = "{{${si.ingredient.name}}}"
+            val amount = si.amountPerServing * servings
+            text = text.replace(token, "$amount ${si.ingredient.unit}")
+        }
+        return text
     }
 
     companion object {

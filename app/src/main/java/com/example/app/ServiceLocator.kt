@@ -1,11 +1,17 @@
 package com.example.app
 
-import com.example.app.data.repository.InMemoryRecipeRepository
+import android.content.Context
+import com.example.app.data.repository.PersistentRecipeRepository
 import com.example.app.domain.repository.RecipeRepository
 
 /**
  * Simple service locator providing shared dependencies.
  */
 object ServiceLocator {
-    val recipeRepository: RecipeRepository by lazy { InMemoryRecipeRepository() }
+    private lateinit var applicationContext: Context
+    val recipeRepository: RecipeRepository by lazy { PersistentRecipeRepository(applicationContext) }
+
+    fun init(context: Context) {
+        applicationContext = context.applicationContext
+    }
 }

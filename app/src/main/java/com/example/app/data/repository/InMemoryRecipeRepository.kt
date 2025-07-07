@@ -13,7 +13,7 @@ class InMemoryRecipeRepository : RecipeRepository {
     private val recipes = mutableListOf<Recipe>()
 
     init {
-        // Add sample recipe on startup
+        // Add sample recipes on startup
         val flour = Ingredient("Flour", "g", 100.0)
         val egg = Ingredient("Egg", "pcs", 1.0)
         val milk = Ingredient("Milk", "ml", 150.0)
@@ -41,6 +41,34 @@ class InMemoryRecipeRepository : RecipeRepository {
             ingredients = listOf(flour, egg, milk),
             steps = steps
         )
+
+        // Second recipe
+        val pasta = Ingredient("Pasta", "g", 100.0)
+        val tomato = Ingredient("Tomato", "pcs", 2.0)
+        val cheese = Ingredient("Cheese", "g", 50.0)
+
+        val pastaSteps = listOf(
+            Step(
+                "Cook pasta",
+                listOf(StepIngredient(pasta, 100.0))
+            ),
+            Step(
+                "Add sauce",
+                listOf(
+                    StepIngredient(tomato, 2.0),
+                    StepIngredient(cheese, 50.0)
+                )
+            )
+        )
+
+        recipes += Recipe(
+            id = 2,
+            name = "Pasta",
+            imageRes = android.R.drawable.ic_menu_gallery,
+            servings = 1,
+            ingredients = listOf(pasta, tomato, cheese),
+            steps = pastaSteps
+        )
     }
 
     override fun getRecipes(): List<Recipe> = recipes
@@ -49,5 +77,12 @@ class InMemoryRecipeRepository : RecipeRepository {
 
     override fun addRecipe(recipe: Recipe) {
         recipes += recipe.copy(id = (recipes.maxOfOrNull { it.id } ?: 0) + 1)
+    }
+
+    override fun updateRecipe(recipe: Recipe) {
+        val index = recipes.indexOfFirst { it.id == recipe.id }
+        if (index != -1) {
+            recipes[index] = recipe
+        }
     }
 }

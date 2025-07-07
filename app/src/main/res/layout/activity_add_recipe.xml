@@ -15,37 +15,30 @@
             android:layout_height="wrap_content"
             android:hint="Name" />
 
-        <EditText
-            android:id="@+id/input_servings"
+        <Spinner
+            android:id="@+id/spinner_servings"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Servings"
-            android:inputType="number" />
+            android:layout_height="wrap_content" />
 
         <EditText
-            android:id="@+id/input_ingredient"
+            android:id="@+id/input_ingredients"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Ingredient" />
+            android:hint="Ingredients (name,quantity,unit per line)"
+            android:inputType="textMultiLine" />
 
         <EditText
-            android:id="@+id/input_quantity"
+            android:id="@+id/input_steps"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Quantity"
-            android:inputType="numberDecimal" />
-
-        <EditText
-            android:id="@+id/input_unit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Unit" />
+            android:hint="Steps (one per line)"
+            android:inputType="textMultiLine" />
 
         <Button
             android:id="@+id/save_recipe"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Save" />
+            android:text="@string/save" />
 
         <Button
             android:id="@+id/back_button"

@@ -9,4 +9,5 @@ interface RecipeRepository {
     fun getRecipes(): List<Recipe>
     fun getRecipe(id: Int): Recipe?
     fun addRecipe(recipe: Recipe)
+    fun updateRecipe(recipe: Recipe)
 }
