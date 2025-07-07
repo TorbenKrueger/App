@@ -1,6 +1,7 @@
 package com.example.app.presentation.detail
 
 import android.os.Bundle
+import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -62,6 +63,8 @@ class RecipeDetailActivity : AppCompatActivity() {
             val newServings = servingsInput.text.toString().toIntOrNull() ?: return@setOnClickListener
             viewModel.updateServings(newServings)
         }
+
+        findViewById<Button>(R.id.back_button).setOnClickListener { finish() }
 
         viewModel.loadRecipe(id)
     }

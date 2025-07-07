@@ -3,4 +3,6 @@
     <string name="app_name">Cookbook</string>
     <string name="update">Update</string>
     <string name="save">Save</string>
+    <string name="add_recipe">Add Recipe</string>
+    <string name="back">Back</string>
 </resources>

@@ -4,12 +4,14 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import android.widget.Button
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.app.R
 import com.example.app.ServiceLocator
 import com.example.app.domain.usecase.GetRecipesUseCase
 import com.example.app.presentation.detail.RecipeDetailActivity
+import com.example.app.presentation.add.AddRecipeActivity
 
 /**
  * Shows a list of all recipes.
@@ -38,6 +40,12 @@ class MainActivity : AppCompatActivity() {
         }
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
+
+        findViewById<Button>(R.id.add_recipe_button).setOnClickListener {
+            startActivity(Intent(this, AddRecipeActivity::class.java))
+        }
+
+        findViewById<Button>(R.id.back_button).setOnClickListener { finish() }
 
         viewModel.recipes.observe(this) { adapter.submitList(it) }
         viewModel.loadRecipes()
