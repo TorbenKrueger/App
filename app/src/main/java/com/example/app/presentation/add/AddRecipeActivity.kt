@@ -48,5 +48,7 @@ class AddRecipeActivity : AppCompatActivity() {
             viewModel.addRecipe(recipe)
             finish()
         }
+
+        findViewById<Button>(R.id.back_button).setOnClickListener { finish() }
     }
 }
