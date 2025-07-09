@@ -45,7 +45,11 @@ class RecipeListAdapter(
 
         fun bind(recipe: Recipe) {
             name.text = recipe.name
-            image.setImageResource(recipe.imageRes)
+            if (recipe.imageUri != null) {
+                image.setImageURI(android.net.Uri.parse(recipe.imageUri))
+            } else {
+                image.setImageResource(recipe.imageRes)
+            }
         }
     }
 }

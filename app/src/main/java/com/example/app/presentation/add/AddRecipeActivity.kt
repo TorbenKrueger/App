@@ -1,8 +1,13 @@
 package com.example.app.presentation.add
 
+import android.app.AlertDialog
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.widget.*
 import androidx.activity.viewModels
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
 import com.example.app.ServiceLocator
@@ -33,6 +38,23 @@ class AddRecipeActivity : AppCompatActivity() {
         }
     }
 
+    private var selectedImageUri: Uri? = null
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            selectedImageUri = it
+            findViewById<ImageView>(R.id.image_preview).setImageURI(it)
+        }
+    }
+
+    private val takePhotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp: Bitmap? ->
+        bmp?.let {
+            val uri = MediaStore.Images.Media.insertImage(contentResolver, it, "recipe", null)
+            selectedImageUri = Uri.parse(uri)
+            findViewById<ImageView>(R.id.image_preview).setImageURI(selectedImageUri)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_recipe)
@@ -50,6 +72,23 @@ class AddRecipeActivity : AppCompatActivity() {
             findViewById<EditText>(R.id.input_ingredients).setText(ingredientsText)
             val stepsText = recipe.steps.joinToString("\n") { it.description }
             findViewById<EditText>(R.id.input_steps).setText(stepsText)
+            recipe.imageUri?.let { uriStr ->
+                selectedImageUri = Uri.parse(uriStr)
+                findViewById<ImageView>(R.id.image_preview).setImageURI(selectedImageUri)
+            }
+        }
+
+        findViewById<Button>(R.id.select_image).setOnClickListener {
+            val options = arrayOf("Camera", "Gallery")
+            AlertDialog.Builder(this)
+                .setItems(options) { _, which ->
+                    if (which == 0) {
+                        takePhotoLauncher.launch(null)
+                    } else {
+                        pickImageLauncher.launch("image/*")
+                    }
+                }
+                .show()
         }
 
         findViewById<Button>(R.id.save_recipe).setOnClickListener {
@@ -66,13 +105,29 @@ class AddRecipeActivity : AppCompatActivity() {
                     Ingredient(parts[0].trim(), parts[2].trim(), quantity)
                 } else null
             }
+            if (ingredients.isEmpty()) {
+                Toast.makeText(this, "Add at least one ingredient", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             val stepsLines = findViewById<EditText>(R.id.input_steps).text.toString()
                 .split('\n')
                 .filter { it.isNotBlank() }
-            val steps = stepsLines.map { Step(it, emptyList()) }
+            val steps = stepsLines.map { line ->
+                val stepIngs = ingredients.filter { line.contains("{{${it.name}}}") }
+                    .map { StepIngredient(it, it.quantityPerServing) }
+                Step(line, stepIngs)
+            }
 
-            val recipe = Recipe(recipeId.takeIf { it != -1 } ?: 0, name, android.R.drawable.ic_menu_gallery, servings, ingredients, steps)
+            val recipe = Recipe(
+                recipeId.takeIf { it != -1 } ?: 0,
+                name,
+                android.R.drawable.ic_menu_gallery,
+                selectedImageUri?.toString(),
+                servings,
+                ingredients,
+                steps
+            )
             if (existingRecipe != null) {
                 viewModel.updateRecipe(recipe)
             } else {

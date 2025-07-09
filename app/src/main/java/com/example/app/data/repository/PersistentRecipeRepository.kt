@@ -90,6 +90,7 @@ class PersistentRecipeRepository(private val context: Context) : RecipeRepositor
             id = 1,
             name = "Pancakes",
             imageRes = android.R.drawable.ic_menu_gallery,
+            imageUri = null,
             servings = 2,
             ingredients = listOf(flour, egg, milk),
             steps = pancakeSteps
@@ -114,6 +115,7 @@ class PersistentRecipeRepository(private val context: Context) : RecipeRepositor
             id = 2,
             name = "Pasta",
             imageRes = android.R.drawable.ic_menu_gallery,
+            imageUri = null,
             servings = 1,
             ingredients = listOf(pasta, tomato, cheese),
             steps = pastaSteps
@@ -159,6 +161,7 @@ private fun Recipe.toJson(): JSONObject {
     obj.put("id", id)
     obj.put("name", name)
     obj.put("imageRes", imageRes)
+    obj.put("imageUri", imageUri)
     obj.put("servings", servings)
 
     val ingredientsArray = JSONArray()
@@ -199,6 +202,7 @@ private fun JSONObject.toRecipe(): Recipe {
         id = getInt("id"),
         name = getString("name"),
         imageRes = getInt("imageRes"),
+        imageUri = optString("imageUri").takeIf { it.isNotEmpty() },
         servings = getInt("servings"),
         ingredients = ingredients,
         steps = steps

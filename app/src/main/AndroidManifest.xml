@@ -11,6 +11,8 @@
 
         <activity android:name="com.example.app.presentation.add.AddRecipeActivity" />
         <activity android:name="com.example.app.presentation.detail.RecipeDetailActivity" />
+        <activity android:name="com.example.app.presentation.plan.MealPlanActivity" />
+        <activity android:name="com.example.app.presentation.plan.ShoppingListActivity" />
         <activity
             android:name="com.example.app.presentation.list.MainActivity"
             android:exported="true">
