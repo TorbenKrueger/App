@@ -6,7 +6,6 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
 import com.example.app.ServiceLocator
-import com.example.app.domain.model.Ingredient
 import com.example.app.domain.model.Recipe
 import com.example.app.domain.usecase.GetRecipesUseCase
 
@@ -70,5 +69,10 @@ class MealPlanActivity : AppCompatActivity() {
             intent.putExtra(ShoppingListActivity.EXTRA_LIST, listText)
             startActivity(intent)
         }
+
+        findViewById<Button>(R.id.nav_recipes).setOnClickListener {
+            startActivity(Intent(this, com.example.app.presentation.list.MainActivity::class.java))
+        }
+        findViewById<Button>(R.id.nav_plan).setOnClickListener { }
     }
 }
