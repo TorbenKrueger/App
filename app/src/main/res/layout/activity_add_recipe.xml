@@ -45,12 +45,23 @@
             android:layout_height="wrap_content"
             android:text="Add Ingredient" />
 
-        <EditText
-            android:id="@+id/input_steps"
+        <Button
+            android:id="@+id/toggle_edit_steps"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Steps (one per line)"
-            android:inputType="textMultiLine" />
+            android:text="Schritte bearbeiten" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/steps_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/add_step_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Schritt hinzufügen"
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/save_recipe"

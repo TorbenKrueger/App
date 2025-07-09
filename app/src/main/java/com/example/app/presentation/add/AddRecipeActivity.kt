@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.text.InputType
 import android.widget.*
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +18,7 @@ import com.example.app.domain.model.Ingredient
 import com.example.app.domain.model.Recipe
 import com.example.app.domain.model.Step
 import com.example.app.domain.model.StepIngredient
+import com.example.app.presentation.add.steps.StepAdapter
 import com.example.app.domain.util.getDefaultUnit
 import com.example.app.domain.util.setDefaultUnit
 import com.example.app.domain.usecase.AddRecipeUseCase
@@ -49,6 +52,11 @@ class AddRecipeActivity : AppCompatActivity() {
     private var wizardServings: Int = 1
     private val ingredients = mutableListOf<Ingredient>()
 
+    private val steps = mutableListOf<String>()
+    private lateinit var stepAdapter: StepAdapter
+    private lateinit var itemTouchHelper: ItemTouchHelper
+    private var editMode = false
+
     private lateinit var ingredientsTable: TableLayout
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -72,6 +80,24 @@ class AddRecipeActivity : AppCompatActivity() {
 
         ingredientsTable = findViewById(R.id.ingredients_table)
 
+        stepAdapter = StepAdapter(steps)
+        val stepsView = findViewById<RecyclerView>(R.id.steps_list)
+        stepsView.adapter = stepAdapter
+
+        itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+                val from = viewHolder.adapterPosition
+                val to = target.adapterPosition
+                stepAdapter.swap(from, to)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+
+            override fun isLongPressDragEnabled(): Boolean = editMode
+        })
+        itemTouchHelper.attachToRecyclerView(stepsView)
+
         val servingsSpinner = findViewById<Spinner>(R.id.spinner_servings)
         servingsSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, (1..10).toList())
 
@@ -83,8 +109,8 @@ class AddRecipeActivity : AppCompatActivity() {
             servingsSpinner.setSelection(recipe.servings - 1)
             ingredients.addAll(recipe.ingredients)
             renderIngredientTable()
-            val stepsText = recipe.steps.joinToString("\n") { it.description }
-            findViewById<EditText>(R.id.input_steps).setText(stepsText)
+            steps.addAll(recipe.steps.map { it.description })
+            stepAdapter.notifyDataSetChanged()
             recipe.imageUri?.let { uriStr ->
                 selectedImageUri = Uri.parse(uriStr)
                 findViewById<ImageView>(R.id.image_preview).setImageURI(selectedImageUri)
@@ -108,6 +134,17 @@ class AddRecipeActivity : AppCompatActivity() {
             showIngredientDialog()
         }
 
+        val toggleEdit = findViewById<Button>(R.id.toggle_edit_steps)
+        val addStepButton = findViewById<Button>(R.id.add_step_button)
+
+        toggleEdit.setOnClickListener {
+            editMode = !editMode
+            toggleEdit.text = if (editMode) "Fertig" else "Schritte bearbeiten"
+            addStepButton.visibility = if (editMode) View.VISIBLE else View.GONE
+        }
+
+        addStepButton.setOnClickListener { showStepDialog() }
+
         findViewById<Button>(R.id.save_recipe).setOnClickListener {
             val name = findViewById<EditText>(R.id.input_name).text.toString()
             val servings = servingsSpinner.selectedItem as Int
@@ -117,9 +154,7 @@ class AddRecipeActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val stepsLines = findViewById<EditText>(R.id.input_steps).text.toString()
-                .split('\n')
-                .filter { it.isNotBlank() }
+            val stepsLines = stepAdapter.getSteps()
             val steps = stepsLines.map { line ->
                 val stepIngs = ingredients.filter { line.contains("{{${it.name}}}", ignoreCase = true) }
                     .map { StepIngredient(it, it.quantityPerServing) }
@@ -315,6 +350,32 @@ class AddRecipeActivity : AppCompatActivity() {
                     ingredients[index] = newIng
                 }
                 renderIngredientTable()
+            }
+            .setNegativeButton("Abbrechen", null)
+            .show()
+    }
+
+    private fun showStepDialog() {
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+
+        val descInput = EditText(this)
+        descInput.hint = "Beschreibung"
+        val ingredientNames = listOf("Keine") + ingredients.map { it.name }
+        val spinner = Spinner(this)
+        spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, ingredientNames)
+
+        layout.addView(descInput)
+        layout.addView(spinner)
+
+        AlertDialog.Builder(this)
+            .setTitle("Schritt hinzufügen")
+            .setView(layout)
+            .setPositiveButton("OK") { _, _ ->
+                val desc = descInput.text.toString()
+                val ingredient = spinner.selectedItem as String
+                val text = if (ingredient != "Keine") "$ingredient: $desc" else desc
+                stepAdapter.addStep(text)
             }
             .setNegativeButton("Abbrechen", null)
             .show()
