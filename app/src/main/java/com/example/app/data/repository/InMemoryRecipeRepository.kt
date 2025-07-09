@@ -37,6 +37,7 @@ class InMemoryRecipeRepository : RecipeRepository {
             id = 1,
             name = "Pancakes",
             imageRes = android.R.drawable.ic_menu_gallery,
+            imageUri = null,
             servings = 2,
             ingredients = listOf(flour, egg, milk),
             steps = steps
@@ -65,6 +66,7 @@ class InMemoryRecipeRepository : RecipeRepository {
             id = 2,
             name = "Pasta",
             imageRes = android.R.drawable.ic_menu_gallery,
+            imageUri = null,
             servings = 1,
             ingredients = listOf(pasta, tomato, cheese),
             steps = pastaSteps
