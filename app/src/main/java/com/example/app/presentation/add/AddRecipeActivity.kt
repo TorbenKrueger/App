@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.InputType
 import android.widget.*
 import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,6 +16,7 @@ import com.example.app.domain.model.Ingredient
 import com.example.app.domain.model.Recipe
 import com.example.app.domain.model.Step
 import com.example.app.domain.model.StepIngredient
+import com.example.app.domain.util.commonFoods
 import com.example.app.domain.usecase.AddRecipeUseCase
 import com.example.app.domain.usecase.GetRecipeUseCase
 import com.example.app.domain.usecase.UpdateRecipeUseCase
@@ -40,6 +42,12 @@ class AddRecipeActivity : AppCompatActivity() {
     }
 
     private var selectedImageUri: Uri? = null
+
+    // State for interactive creation dialog
+    private var wizardName: String = ""
+    private var wizardServings: Int = 1
+    private var wizardIngredientIndex: Int = 0
+    private val wizardIngredients = mutableListOf<Ingredient>()
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -77,7 +85,7 @@ class AddRecipeActivity : AppCompatActivity() {
                 selectedImageUri = Uri.parse(uriStr)
                 findViewById<ImageView>(R.id.image_preview).setImageURI(selectedImageUri)
             }
-        }
+        } ?: startWizard()
 
         findViewById<Button>(R.id.select_image).setOnClickListener {
             val options = arrayOf("Camera", "Gallery")
@@ -138,5 +146,73 @@ class AddRecipeActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.back_button).setOnClickListener { finish() }
+    }
+
+    private fun startWizard() {
+        wizardIngredientIndex = 0
+        askName()
+    }
+
+    private fun askName() {
+        val input = EditText(this)
+        AlertDialog.Builder(this)
+            .setTitle("Name des Gerichtes")
+            .setView(input)
+            .setPositiveButton("Weiter") { _, _ ->
+                wizardName = input.text.toString()
+                askServings()
+            }
+            .setNegativeButton("Abbrechen") { _, _ -> finish() }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun askServings() {
+        val input = EditText(this)
+        input.inputType = InputType.TYPE_CLASS_NUMBER
+        AlertDialog.Builder(this)
+            .setTitle("Anzahl Portionen")
+            .setView(input)
+            .setPositiveButton("Weiter") { _, _ ->
+                wizardServings = input.text.toString().toIntOrNull() ?: 1
+                askIngredient()
+            }
+            .setNegativeButton("Abbrechen") { _, _ -> finalizeWizard() }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun askIngredient() {
+        if (wizardIngredientIndex >= commonFoods.size) {
+            finalizeWizard()
+            return
+        }
+        val ingredient = commonFoods[wizardIngredientIndex]
+        val input = EditText(this)
+        input.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+        AlertDialog.Builder(this)
+            .setTitle("Menge ${ingredient.name} (${ingredient.unit}) pro Portion")
+            .setView(input)
+            .setPositiveButton("Weiter") { _, _ ->
+                val qty = input.text.toString().toDoubleOrNull()
+                if (qty != null) {
+                    wizardIngredients.add(ingredient.copy(quantityPerServing = qty))
+                }
+                wizardIngredientIndex++
+                askIngredient()
+            }
+            .setNegativeButton("Abbrechen") { _, _ -> finalizeWizard() }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun finalizeWizard() {
+        findViewById<EditText>(R.id.input_name).setText(wizardName)
+        val spinner = findViewById<Spinner>(R.id.spinner_servings)
+        spinner.setSelection((wizardServings - 1).coerceAtLeast(0))
+        val ingredientsText = wizardIngredients.joinToString("\n") {
+            "${it.name},${it.quantityPerServing},${it.unit}"
+        }
+        findViewById<EditText>(R.id.input_ingredients).setText(ingredientsText)
     }
 }
