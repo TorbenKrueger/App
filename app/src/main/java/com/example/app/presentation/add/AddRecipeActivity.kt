@@ -16,7 +16,8 @@ import com.example.app.domain.model.Ingredient
 import com.example.app.domain.model.Recipe
 import com.example.app.domain.model.Step
 import com.example.app.domain.model.StepIngredient
-import com.example.app.domain.util.commonFoods
+import com.example.app.domain.util.getDefaultUnit
+import com.example.app.domain.util.setDefaultUnit
 import com.example.app.domain.usecase.AddRecipeUseCase
 import com.example.app.domain.usecase.GetRecipeUseCase
 import com.example.app.domain.usecase.UpdateRecipeUseCase
@@ -46,7 +47,6 @@ class AddRecipeActivity : AppCompatActivity() {
     // State for interactive creation dialog
     private var wizardName: String = ""
     private var wizardServings: Int = 1
-    private var wizardIngredientIndex: Int = 0
     private val wizardIngredients = mutableListOf<Ingredient>()
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -149,7 +149,6 @@ class AddRecipeActivity : AppCompatActivity() {
     }
 
     private fun startWizard() {
-        wizardIngredientIndex = 0
         askName()
     }
 
@@ -183,25 +182,64 @@ class AddRecipeActivity : AppCompatActivity() {
     }
 
     private fun askIngredient() {
-        if (wizardIngredientIndex >= commonFoods.size) {
-            finalizeWizard()
-            return
-        }
-        val ingredient = commonFoods[wizardIngredientIndex]
         val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
         AlertDialog.Builder(this)
-            .setTitle("Menge ${ingredient.name} (${ingredient.unit}) pro Portion")
+            .setTitle("Zutat eingeben (z.B. 100 g Nudeln oder 100 Nudeln)")
             .setView(input)
             .setPositiveButton("Weiter") { _, _ ->
-                val qty = input.text.toString().toDoubleOrNull()
-                if (qty != null) {
-                    wizardIngredients.add(ingredient.copy(quantityPerServing = qty))
-                }
-                wizardIngredientIndex++
-                askIngredient()
+                handleIngredientInput(input.text.toString())
             }
-            .setNegativeButton("Abbrechen") { _, _ -> finalizeWizard() }
+            .setNegativeButton("Fertig") { _, _ -> finalizeWizard() }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun handleIngredientInput(text: String) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) {
+            askIngredient()
+            return
+        }
+        val parts = trimmed.split(Regex("\\s+"))
+        val qty = parts.getOrNull(0)?.replace(',', '.')?.toDoubleOrNull()
+        if (qty == null) {
+            askIngredient()
+            return
+        }
+        if (parts.size >= 3) {
+            val unit = parts[1]
+            val name = parts.subList(2, parts.size).joinToString(" ")
+            setDefaultUnit(name, unit)
+            wizardIngredients.add(Ingredient(name, unit, qty))
+            askIngredient()
+        } else if (parts.size == 2) {
+            val name = parts[1]
+            val unit = getDefaultUnit(name)
+            if (unit != null) {
+                wizardIngredients.add(Ingredient(name, unit, qty))
+                askIngredient()
+            } else {
+                askUnitForIngredient(name) { chosenUnit ->
+                    if (chosenUnit.isNotBlank()) {
+                        setDefaultUnit(name, chosenUnit)
+                        wizardIngredients.add(Ingredient(name, chosenUnit, qty))
+                    }
+                    askIngredient()
+                }
+            }
+        } else {
+            askIngredient()
+        }
+    }
+
+    private fun askUnitForIngredient(name: String, onUnit: (String) -> Unit) {
+        val input = EditText(this)
+        AlertDialog.Builder(this)
+            .setTitle("Einheit für $name")
+            .setView(input)
+            .setPositiveButton("OK") { _, _ ->
+                onUnit(input.text.toString().trim())
+            }
             .setCancelable(false)
             .show()
     }
