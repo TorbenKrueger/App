@@ -38,8 +38,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         gestureDetector = GestureDetectorCompat(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-                if (e1 != null && e2 != null && e1.x - e2.x > 200) {
+            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                if (e1.x - e2.x > 200) {
                     startActivity(Intent(this@MainActivity, com.example.app.presentation.plan.MealPlanActivity::class.java))
                     return true
                 }
