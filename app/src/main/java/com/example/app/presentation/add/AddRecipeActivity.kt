@@ -233,12 +233,19 @@ class AddRecipeActivity : AppCompatActivity() {
     }
 
     private fun askUnitForIngredient(name: String, onUnit: (String) -> Unit) {
-        val input = EditText(this)
+        val units = arrayOf("ml", "l", "g", "kg", "Stk", "Sonstiges")
+        val displayUnits = arrayOf(
+            "Milliliter (ml)",
+            "Liter (l)",
+            "Gramm (g)",
+            "Kilo (kg)",
+            "Stück (Stk.)",
+            "Sonstiges"
+        )
         AlertDialog.Builder(this)
             .setTitle("Einheit für $name")
-            .setView(input)
-            .setPositiveButton("OK") { _, _ ->
-                onUnit(input.text.toString().trim())
+            .setItems(displayUnits) { _, which ->
+                onUnit(units[which])
             }
             .setCancelable(false)
             .show()
