@@ -17,8 +17,8 @@ val defaultUnits: MutableMap<String, String> = ConcurrentHashMap(
 
 /** Adds or updates the default unit for the given ingredient name. */
 fun setDefaultUnit(name: String, unit: String) {
-    defaultUnits[name] = unit
+    defaultUnits[name.lowercase()] = unit
 }
 
 /** Returns the default unit for the ingredient name, or null if unknown. */
-fun getDefaultUnit(name: String): String? = defaultUnits[name]
+fun getDefaultUnit(name: String): String? = defaultUnits[name.lowercase()]
