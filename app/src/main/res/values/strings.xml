@@ -5,4 +5,6 @@
     <string name="save">Save</string>
     <string name="add_recipe">Add Recipe</string>
     <string name="back">Back</string>
+    <string name="recipes">Recipes</string>
+    <string name="meal_plan">Meal Plan</string>
 </resources>

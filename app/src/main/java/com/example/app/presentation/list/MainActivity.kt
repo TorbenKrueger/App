@@ -5,9 +5,6 @@ import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
-import android.view.GestureDetector
-import android.view.MotionEvent
-import androidx.core.view.GestureDetectorCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.app.R
@@ -31,21 +28,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private lateinit var gestureDetector: GestureDetectorCompat
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        gestureDetector = GestureDetectorCompat(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                if (e1.x - e2.x > 200) {
-                    startActivity(Intent(this@MainActivity, com.example.app.presentation.plan.MealPlanActivity::class.java))
-                    return true
-                }
-                return false
-            }
-        })
+
 
         val recyclerView = findViewById<RecyclerView>(R.id.recipe_list)
         val adapter = RecipeListAdapter { recipe ->
@@ -62,6 +50,11 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.back_button).setOnClickListener { finish() }
 
+        findViewById<Button>(R.id.nav_recipes).setOnClickListener { }
+        findViewById<Button>(R.id.nav_plan).setOnClickListener {
+            startActivity(Intent(this, com.example.app.presentation.plan.MealPlanActivity::class.java))
+        }
+
         viewModel.recipes.observe(this) { adapter.submitList(it) }
         viewModel.loadRecipes()
     }
@@ -71,8 +64,5 @@ class MainActivity : AppCompatActivity() {
         viewModel.loadRecipes()
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        gestureDetector.onTouchEvent(event)
-        return super.onTouchEvent(event)
-    }
+
 }
