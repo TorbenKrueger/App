@@ -14,6 +14,7 @@ import com.example.app.ServiceLocator
 import com.example.app.domain.model.Ingredient
 import com.example.app.domain.model.Recipe
 import com.example.app.domain.model.Step
+import com.example.app.domain.model.StepIngredient
 import com.example.app.domain.usecase.AddRecipeUseCase
 import com.example.app.domain.usecase.GetRecipeUseCase
 import com.example.app.domain.usecase.UpdateRecipeUseCase
