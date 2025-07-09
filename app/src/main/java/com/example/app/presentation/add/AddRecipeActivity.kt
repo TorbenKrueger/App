@@ -47,7 +47,9 @@ class AddRecipeActivity : AppCompatActivity() {
     // State for interactive creation dialog
     private var wizardName: String = ""
     private var wizardServings: Int = 1
-    private val wizardIngredients = mutableListOf<Ingredient>()
+    private val ingredients = mutableListOf<Ingredient>()
+
+    private lateinit var ingredientsTable: TableLayout
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -68,6 +70,8 @@ class AddRecipeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_recipe)
 
+        ingredientsTable = findViewById(R.id.ingredients_table)
+
         val servingsSpinner = findViewById<Spinner>(R.id.spinner_servings)
         servingsSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, (1..10).toList())
 
@@ -77,8 +81,8 @@ class AddRecipeActivity : AppCompatActivity() {
         existingRecipe?.let { recipe ->
             findViewById<EditText>(R.id.input_name).setText(recipe.name)
             servingsSpinner.setSelection(recipe.servings - 1)
-            val ingredientsText = recipe.ingredients.joinToString("\n") { "${it.name},${it.quantityPerServing},${it.unit}" }
-            findViewById<EditText>(R.id.input_ingredients).setText(ingredientsText)
+            ingredients.addAll(recipe.ingredients)
+            renderIngredientTable()
             val stepsText = recipe.steps.joinToString("\n") { it.description }
             findViewById<EditText>(R.id.input_steps).setText(stepsText)
             recipe.imageUri?.let { uriStr ->
@@ -100,20 +104,14 @@ class AddRecipeActivity : AppCompatActivity() {
                 .show()
         }
 
+        findViewById<Button>(R.id.button_add_ingredient).setOnClickListener {
+            showIngredientDialog()
+        }
+
         findViewById<Button>(R.id.save_recipe).setOnClickListener {
             val name = findViewById<EditText>(R.id.input_name).text.toString()
             val servings = servingsSpinner.selectedItem as Int
 
-            val ingredientsLines = findViewById<EditText>(R.id.input_ingredients).text.toString()
-                .split('\n')
-                .filter { it.isNotBlank() }
-            val ingredients = ingredientsLines.mapNotNull { line ->
-                val parts = line.split(',')
-                if (parts.size == 3) {
-                    val quantity = parts[1].toDoubleOrNull() ?: return@mapNotNull null
-                    Ingredient(parts[0].trim(), parts[2].trim(), quantity)
-                } else null
-            }
             if (ingredients.isEmpty()) {
                 Toast.makeText(this, "Add at least one ingredient", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -123,7 +121,7 @@ class AddRecipeActivity : AppCompatActivity() {
                 .split('\n')
                 .filter { it.isNotBlank() }
             val steps = stepsLines.map { line ->
-                val stepIngs = ingredients.filter { line.contains("{{${it.name}}}") }
+                val stepIngs = ingredients.filter { line.contains("{{${it.name}}}", ignoreCase = true) }
                     .map { StepIngredient(it, it.quantityPerServing) }
                 Step(line, stepIngs)
             }
@@ -201,7 +199,7 @@ class AddRecipeActivity : AppCompatActivity() {
             return
         }
         val parts = trimmed.split(Regex("\\s+"))
-        val qty = parts.getOrNull(0)?.replace(',', '.')?.toDoubleOrNull()
+        val qty = parts.getOrNull(0)?.toIntOrNull()
         if (qty == null) {
             askIngredient()
             return
@@ -210,19 +208,22 @@ class AddRecipeActivity : AppCompatActivity() {
             val unit = parts[1]
             val name = parts.subList(2, parts.size).joinToString(" ")
             setDefaultUnit(name, unit)
-            wizardIngredients.add(Ingredient(name, unit, qty))
+            ingredients.add(Ingredient(name, unit, qty.toDouble()))
+            renderIngredientTable()
             askIngredient()
         } else if (parts.size == 2) {
             val name = parts[1]
             val unit = getDefaultUnit(name)
             if (unit != null) {
-                wizardIngredients.add(Ingredient(name, unit, qty))
+                ingredients.add(Ingredient(name, unit, qty.toDouble()))
+                renderIngredientTable()
                 askIngredient()
             } else {
                 askUnitForIngredient(name) { chosenUnit ->
                     if (chosenUnit.isNotBlank()) {
                         setDefaultUnit(name, chosenUnit)
-                        wizardIngredients.add(Ingredient(name, chosenUnit, qty))
+                        ingredients.add(Ingredient(name, chosenUnit, qty.toDouble()))
+                        renderIngredientTable()
                     }
                     askIngredient()
                 }
@@ -255,9 +256,67 @@ class AddRecipeActivity : AppCompatActivity() {
         findViewById<EditText>(R.id.input_name).setText(wizardName)
         val spinner = findViewById<Spinner>(R.id.spinner_servings)
         spinner.setSelection((wizardServings - 1).coerceAtLeast(0))
-        val ingredientsText = wizardIngredients.joinToString("\n") {
-            "${it.name},${it.quantityPerServing},${it.unit}"
+        renderIngredientTable()
+    }
+
+    private fun renderIngredientTable() {
+        ingredientsTable.removeAllViews()
+        ingredients.forEachIndexed { index, ing ->
+            val row = TableRow(this)
+            val name = TextView(this)
+            name.text = ing.name
+            val amount = TextView(this)
+            amount.text = ing.quantityPerServing.toInt().toString()
+            val unit = TextView(this)
+            unit.text = ing.unit
+            row.addView(name)
+            row.addView(amount)
+            row.addView(unit)
+            row.setOnClickListener { showIngredientDialog(ing, index) }
+            ingredientsTable.addView(row)
         }
-        findViewById<EditText>(R.id.input_ingredients).setText(ingredientsText)
+    }
+
+    private fun showIngredientDialog(ingredient: Ingredient? = null, index: Int? = null) {
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+
+        val nameInput = EditText(this)
+        nameInput.hint = "Name"
+        val qtyInput = EditText(this)
+        qtyInput.inputType = InputType.TYPE_CLASS_NUMBER
+        qtyInput.hint = "Menge"
+        val unitInput = EditText(this)
+        unitInput.hint = "Einheit"
+
+        ingredient?.let {
+            nameInput.setText(it.name)
+            qtyInput.setText(it.quantityPerServing.toInt().toString())
+            unitInput.setText(it.unit)
+        }
+
+        layout.addView(nameInput)
+        layout.addView(qtyInput)
+        layout.addView(unitInput)
+
+        AlertDialog.Builder(this)
+            .setTitle(if (ingredient == null) "Zutat" else "Zutat bearbeiten")
+            .setView(layout)
+            .setPositiveButton("OK") { _, _ ->
+                val qty = qtyInput.text.toString().toIntOrNull() ?: 0
+                val newIng = Ingredient(
+                    nameInput.text.toString(),
+                    unitInput.text.toString(),
+                    qty.toDouble()
+                )
+                if (index == null) {
+                    ingredients.add(newIng)
+                } else {
+                    ingredients[index] = newIng
+                }
+                renderIngredientTable()
+            }
+            .setNegativeButton("Abbrechen", null)
+            .show()
     }
 }

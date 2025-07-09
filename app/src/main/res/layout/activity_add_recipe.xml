@@ -33,12 +33,17 @@
             android:layout_height="wrap_content"
             android:text="Select Image" />
 
-        <EditText
-            android:id="@+id/input_ingredients"
+        <TableLayout
+            android:id="@+id/ingredients_table"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Ingredients (name,quantity,unit per line)"
-            android:inputType="textMultiLine" />
+            android:stretchColumns="*" />
+
+        <Button
+            android:id="@+id/button_add_ingredient"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Ingredient" />
 
         <EditText
             android:id="@+id/input_steps"

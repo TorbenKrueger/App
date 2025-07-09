@@ -44,7 +44,8 @@ class RecipeDetailActivity : AppCompatActivity() {
             ingredientLayout.removeAllViews()
             recipe.ingredients.forEach { ingredient ->
                 val tv = TextView(this)
-                tv.text = "${ingredient.name}: ${ingredient.quantityPerServing * recipe.servings} ${ingredient.unit}"
+                val amount = (ingredient.quantityPerServing * recipe.servings).toInt()
+                tv.text = "${ingredient.name}: $amount ${ingredient.unit}"
                 ingredientLayout.addView(tv)
             }
 
@@ -83,8 +84,8 @@ class RecipeDetailActivity : AppCompatActivity() {
         var text = step.description
         step.ingredients.forEach { si ->
             val token = "{{${si.ingredient.name}}}"
-            val amount = si.amountPerServing * servings
-            text = text.replace(token, "$amount ${si.ingredient.unit}")
+            val amount = (si.amountPerServing * servings).toInt()
+            text = text.replace(token, "$amount ${si.ingredient.unit}", ignoreCase = true)
         }
         return text
     }
