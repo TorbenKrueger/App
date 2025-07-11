@@ -1,19 +1,22 @@
 package com.example.app.presentation.add
 
 import android.app.AlertDialog
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.text.InputType
 import android.view.View
 import android.widget.*
+import androidx.core.content.FileProvider
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
+import com.example.app.BuildConfig
 import com.example.app.ServiceLocator
 import com.example.app.domain.model.Ingredient
 import com.example.app.domain.model.Recipe
@@ -78,21 +81,35 @@ class AddRecipeActivity : AppCompatActivity() {
         }
     }
 
-    private val takePhotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp: Bitmap? ->
-        bmp?.let {
-            try {
-                val uri = MediaStore.Images.Media.insertImage(contentResolver, it, "recipe", null)
-                selectedImageUri = Uri.parse(uri)
+    private var photoUri: Uri? = null
+
+    private val cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            openCamera()
+        } else {
+            Snackbar.make(findViewById(android.R.id.content), "Camera permission required", Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    private val takePhotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success: Boolean ->
+        if (success) {
+            photoUri?.let { uri ->
+                selectedImageUri = uri
                 Glide.with(this)
-                    .load(it)
+                    .load(uri)
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .error(android.R.drawable.ic_menu_report_image)
                     .into(findViewById(R.id.image_preview))
-            } catch (e: Exception) {
-                Snackbar.make(findViewById(android.R.id.content), "Image save failed", Snackbar.LENGTH_LONG).show()
-                findViewById<ImageView>(R.id.image_preview).setImageResource(android.R.drawable.ic_menu_report_image)
             }
+        } else {
+            Snackbar.make(findViewById(android.R.id.content), "Image capture failed", Snackbar.LENGTH_LONG).show()
         }
+    }
+
+    private fun openCamera() {
+        val file = java.io.File.createTempFile("recipe_", ".jpg", cacheDir)
+        photoUri = FileProvider.getUriForFile(this, "${BuildConfig.APPLICATION_ID}.fileprovider", file)
+        takePhotoLauncher.launch(photoUri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -101,7 +118,7 @@ class AddRecipeActivity : AppCompatActivity() {
 
         ingredientsTable = findViewById(R.id.ingredients_table)
 
-        stepAdapter = StepAdapter(steps)
+        stepAdapter = StepAdapter(steps) { vh -> itemTouchHelper.startDrag(vh) }
         stepAdapter.showHandles = editMode
         val stepsView = findViewById<RecyclerView>(R.id.steps_list)
         stepsView.adapter = stepAdapter
@@ -116,7 +133,7 @@ class AddRecipeActivity : AppCompatActivity() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
 
-            override fun isLongPressDragEnabled(): Boolean = editMode
+            override fun isLongPressDragEnabled(): Boolean = false
         })
         itemTouchHelper.attachToRecyclerView(stepsView)
 
@@ -148,7 +165,11 @@ class AddRecipeActivity : AppCompatActivity() {
             AlertDialog.Builder(this)
                 .setItems(options) { _, which ->
                     if (which == 0) {
-                        takePhotoLauncher.launch(null)
+                        if (ContextCompat.checkSelfPermission(this@AddRecipeActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                            openCamera()
+                        } else {
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
                     } else {
                         pickImageLauncher.launch("image/*")
                     }
