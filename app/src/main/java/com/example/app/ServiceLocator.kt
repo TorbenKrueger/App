@@ -11,6 +11,9 @@ object ServiceLocator {
     private lateinit var applicationContext: Context
     val recipeRepository: RecipeRepository by lazy { PersistentRecipeRepository(applicationContext) }
 
+    /** Last generated shopping list text. */
+    var shoppingList: String = ""
+
     fun init(context: Context) {
         applicationContext = context.applicationContext
     }

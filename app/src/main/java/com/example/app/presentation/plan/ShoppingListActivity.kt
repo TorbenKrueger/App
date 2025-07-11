@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
+import com.example.app.ServiceLocator
 
 class ShoppingListActivity : AppCompatActivity() {
 
@@ -11,7 +12,7 @@ class ShoppingListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_shopping_list)
 
-        val text = intent.getStringExtra(EXTRA_LIST) ?: ""
+        val text = intent.getStringExtra(EXTRA_LIST) ?: ServiceLocator.shoppingList
         findViewById<TextView>(R.id.list_text).text = text
     }
 

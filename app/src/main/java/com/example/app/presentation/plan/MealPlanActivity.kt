@@ -65,6 +65,7 @@ class MealPlanActivity : AppCompatActivity() {
                 }
             }
             val listText = totals.entries.joinToString("\n") { "${it.key}: ${it.value.second} ${it.value.first}" }
+            ServiceLocator.shoppingList = listText
             val intent = Intent(this, ShoppingListActivity::class.java)
             intent.putExtra(ShoppingListActivity.EXTRA_LIST, listText)
             startActivity(intent)
@@ -74,5 +75,10 @@ class MealPlanActivity : AppCompatActivity() {
             startActivity(Intent(this, com.example.app.presentation.list.MainActivity::class.java))
         }
         findViewById<Button>(R.id.nav_plan).setOnClickListener { }
+        findViewById<Button>(R.id.nav_shopping).setOnClickListener {
+            val intent = Intent(this, ShoppingListActivity::class.java)
+            intent.putExtra(ShoppingListActivity.EXTRA_LIST, ServiceLocator.shoppingList)
+            startActivity(intent)
+        }
     }
 }
