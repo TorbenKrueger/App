@@ -13,14 +13,14 @@ import com.example.app.R
 class StepAdapter(private val items: MutableList<String>) : RecyclerView.Adapter<StepAdapter.StepViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StepViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(android.R.layout.simple_list_item_1, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_step, parent, false)
         return StepViewHolder(view)
     }
 
     override fun getItemCount(): Int = items.size
 
     override fun onBindViewHolder(holder: StepViewHolder, position: Int) {
-        holder.text.text = items[position]
+        holder.text.text = "${position + 1}. ${items[position]}"
     }
 
     fun swap(from: Int, to: Int) {
@@ -38,6 +38,7 @@ class StepAdapter(private val items: MutableList<String>) : RecyclerView.Adapter
     fun getSteps(): List<String> = items.toList()
 
     inner class StepViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val text: TextView = view.findViewById(android.R.id.text1)
+        val text: TextView = view.findViewById(R.id.step_text)
+        val handle: View = view.findViewById(R.id.drag_handle)
     }
 }

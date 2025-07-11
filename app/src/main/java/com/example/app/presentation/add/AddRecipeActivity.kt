@@ -299,15 +299,15 @@ class AddRecipeActivity : AppCompatActivity() {
         ingredientsTable.removeAllViews()
         ingredients.forEachIndexed { index, ing ->
             val row = TableRow(this)
-            val name = TextView(this)
-            name.text = ing.name
             val amount = TextView(this)
             amount.text = ing.quantityPerServing.toInt().toString()
             val unit = TextView(this)
             unit.text = ing.unit
-            row.addView(name)
+            val name = TextView(this)
+            name.text = ing.name
             row.addView(amount)
             row.addView(unit)
+            row.addView(name)
             row.setOnClickListener { showIngredientDialog(ing, index) }
             ingredientsTable.addView(row)
         }

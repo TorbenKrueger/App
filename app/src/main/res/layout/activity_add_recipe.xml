@@ -33,6 +33,14 @@
             android:layout_height="wrap_content"
             android:text="Select Image" />
 
+        <TextView
+            android:id="@+id/ingredients_heading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/ingredients_heading"
+            android:textStyle="bold"
+            android:paddingTop="8dp" />
+
         <TableLayout
             android:id="@+id/ingredients_table"
             android:layout_width="match_parent"
