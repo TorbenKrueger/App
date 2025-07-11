@@ -16,7 +16,6 @@ import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
-import com.example.app.BuildConfig
 import com.example.app.ServiceLocator
 import com.example.app.domain.model.Ingredient
 import com.example.app.domain.model.Recipe
@@ -108,7 +107,7 @@ class AddRecipeActivity : AppCompatActivity() {
 
     private fun openCamera() {
         val file = java.io.File.createTempFile("recipe_", ".jpg", cacheDir)
-        photoUri = FileProvider.getUriForFile(this, "${BuildConfig.APPLICATION_ID}.fileprovider", file)
+        photoUri = FileProvider.getUriForFile(this, "${applicationContext.packageName}.fileprovider", file)
         takePhotoLauncher.launch(photoUri)
     }
 
