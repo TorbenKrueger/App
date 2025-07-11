@@ -30,7 +30,6 @@ import com.example.app.presentation.detail.adapter.IngredientAdapter
 import com.example.app.presentation.detail.adapter.StepEditAdapter
 import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
-import com.example.app.BuildConfig
 
 /**
  * Displays details for a selected recipe.
@@ -100,7 +99,7 @@ class RecipeDetailActivity : AppCompatActivity() {
 
     private fun openCamera() {
         val file = java.io.File.createTempFile("recipe_", ".jpg", cacheDir)
-        photoUri = FileProvider.getUriForFile(this, "${BuildConfig.APPLICATION_ID}.fileprovider", file)
+        photoUri = FileProvider.getUriForFile(this, "${applicationContext.packageName}.fileprovider", file)
         takePhotoLauncher.launch(photoUri)
     }
 
