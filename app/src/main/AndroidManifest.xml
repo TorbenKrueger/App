@@ -27,9 +27,7 @@
         <activity android:name="com.example.app.presentation.detail.RecipeDetailActivity" />
         <activity android:name="com.example.app.presentation.plan.MealPlanActivity" />
         <activity android:name="com.example.app.presentation.plan.ShoppingListActivity" />
-        <activity
-            android:name="com.example.app.presentation.list.MainActivity"
-            android:exported="true">
+        <activity android:name="com.example.app.presentation.home.HomeActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
