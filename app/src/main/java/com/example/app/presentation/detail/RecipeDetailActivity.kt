@@ -2,9 +2,7 @@ package com.example.app.presentation.detail
 
 import android.os.Bundle
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
-import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
@@ -16,6 +14,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import com.example.app.R
 import com.example.app.ServiceLocator
 import com.example.app.domain.usecase.GetRecipeUseCase
@@ -28,6 +30,7 @@ import com.example.app.presentation.detail.adapter.IngredientAdapter
 import com.example.app.presentation.detail.adapter.StepEditAdapter
 import com.bumptech.glide.Glide
 import com.google.android.material.snackbar.Snackbar
+import com.example.app.BuildConfig
 
 /**
  * Displays details for a selected recipe.
@@ -70,21 +73,35 @@ class RecipeDetailActivity : AppCompatActivity() {
         }
     }
 
-    private val takePhotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp: Bitmap? ->
-        bmp?.let {
-            try {
-                val uri = MediaStore.Images.Media.insertImage(contentResolver, it, "recipe", null)
-                selectedImageUri = Uri.parse(uri)
+    private var photoUri: Uri? = null
+
+    private val cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            openCamera()
+        } else {
+            Snackbar.make(findViewById(android.R.id.content), "Camera permission required", Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    private val takePhotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success: Boolean ->
+        if (success) {
+            photoUri?.let { uri ->
+                selectedImageUri = uri
                 Glide.with(this)
-                    .load(it)
+                    .load(uri)
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .error(android.R.drawable.ic_menu_report_image)
                     .into(findViewById(R.id.dish_image))
-            } catch (e: Exception) {
-                Snackbar.make(findViewById(android.R.id.content), "Image save failed", Snackbar.LENGTH_LONG).show()
-                findViewById<ImageView>(R.id.dish_image).setImageResource(android.R.drawable.ic_menu_report_image)
             }
+        } else {
+            Snackbar.make(findViewById(android.R.id.content), "Image capture failed", Snackbar.LENGTH_LONG).show()
         }
+    }
+
+    private fun openCamera() {
+        val file = java.io.File.createTempFile("recipe_", ".jpg", cacheDir)
+        photoUri = FileProvider.getUriForFile(this, "${BuildConfig.APPLICATION_ID}.fileprovider", file)
+        takePhotoLauncher.launch(photoUri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,7 +132,7 @@ class RecipeDetailActivity : AppCompatActivity() {
         ingredientsView.layoutManager = LinearLayoutManager(this)
         ingredientsView.adapter = ingredientAdapter
 
-        stepAdapter = StepEditAdapter(mutableListOf()) { view, index, step ->
+        stepAdapter = StepEditAdapter(mutableListOf(), { vh -> itemTouchHelper.startDrag(vh) }) { view, index, step ->
             if (editMode) showStepMenu(view, index, step)
         }
         stepAdapter.showHandles = editMode
@@ -132,7 +149,7 @@ class RecipeDetailActivity : AppCompatActivity() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
 
-            override fun isLongPressDragEnabled(): Boolean = editMode
+            override fun isLongPressDragEnabled(): Boolean = false
         })
         itemTouchHelper.attachToRecyclerView(stepsView)
 
@@ -198,7 +215,13 @@ class RecipeDetailActivity : AppCompatActivity() {
                 menu.add("Gallery")
                 setOnMenuItemClickListener { item ->
                     when (item.title) {
-                        "Camera" -> takePhotoLauncher.launch(null)
+                        "Camera" -> {
+                            if (ContextCompat.checkSelfPermission(this@RecipeDetailActivity, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                                openCamera()
+                            } else {
+                                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        }
                         "Gallery" -> pickImageLauncher.launch("image/*")
                     }
                     true
@@ -294,7 +317,7 @@ class RecipeDetailActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.servings_value).text = recipe.servings.toString()
         ingredientAdapter.setItems(recipe.ingredients)
-        stepAdapter = StepEditAdapter(recipe.steps.toMutableList()) { view, index, step ->
+        stepAdapter = StepEditAdapter(recipe.steps.toMutableList(), { vh -> itemTouchHelper.startDrag(vh) }) { view, index, step ->
             if (editMode) showStepMenu(view, index, step)
         }
         stepAdapter.showHandles = editMode

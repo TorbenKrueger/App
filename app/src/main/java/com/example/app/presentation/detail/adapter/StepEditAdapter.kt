@@ -2,6 +2,7 @@ package com.example.app.presentation.detail.adapter
 
 import android.view.LayoutInflater
 import android.view.View
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -11,6 +12,7 @@ import com.example.app.domain.model.Step
 /** Adapter for editing steps with drag-and-drop support. */
 class StepEditAdapter(
     private val items: MutableList<Step>,
+    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
     private val onClick: (View, Int, Step) -> Unit
 ) : RecyclerView.Adapter<StepEditAdapter.StepViewHolder>() {
 
@@ -29,6 +31,12 @@ class StepEditAdapter(
         holder.text.text = "${position + 1}. ${step.description}"
         holder.handle.visibility = if (showHandles) View.VISIBLE else View.GONE
         holder.itemView.setOnClickListener { onClick(holder.itemView, position, step) }
+        holder.handle.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN && showHandles) {
+                onStartDrag(holder)
+            }
+            false
+        }
     }
 
     fun swap(from: Int, to: Int) {
@@ -36,6 +44,9 @@ class StepEditAdapter(
         val item = items.removeAt(from)
         items.add(to, item)
         notifyItemMoved(from, to)
+        val start = kotlin.math.min(from, to)
+        val end = kotlin.math.max(from, to)
+        notifyItemRangeChanged(start, end - start + 1)
     }
 
     fun update(index: Int, step: Step) {
