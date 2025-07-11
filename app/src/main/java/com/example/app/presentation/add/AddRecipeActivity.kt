@@ -22,7 +22,8 @@ import com.example.app.domain.model.StepIngredient
 import com.example.app.presentation.add.steps.StepAdapter
 import com.example.app.domain.util.getDefaultUnit
 import com.example.app.domain.util.setDefaultUnit
-import com.example.app.domain.util.loadScaledBitmap
+import com.bumptech.glide.Glide
+import com.google.android.material.snackbar.Snackbar
 import com.example.app.domain.usecase.AddRecipeUseCase
 import com.example.app.domain.usecase.GetRecipeUseCase
 import com.example.app.domain.usecase.UpdateRecipeUseCase
@@ -64,15 +65,15 @@ class AddRecipeActivity : AppCompatActivity() {
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             try {
-                val bmp = loadScaledBitmap(this, it)
                 selectedImageUri = it
-                if (bmp != null) {
-                    findViewById<ImageView>(R.id.image_preview).setImageBitmap(bmp)
-                } else {
-                    findViewById<ImageView>(R.id.image_preview).setImageURI(it)
-                }
+                Glide.with(this)
+                    .load(it)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .error(android.R.drawable.ic_menu_report_image)
+                    .into(findViewById(R.id.image_preview))
             } catch (e: Exception) {
-                Toast.makeText(this, "Image load failed", Toast.LENGTH_SHORT).show()
+                Snackbar.make(findViewById(android.R.id.content), "Image load failed", Snackbar.LENGTH_LONG).show()
+                findViewById<ImageView>(R.id.image_preview).setImageResource(android.R.drawable.ic_menu_report_image)
             }
         }
     }
@@ -82,9 +83,14 @@ class AddRecipeActivity : AppCompatActivity() {
             try {
                 val uri = MediaStore.Images.Media.insertImage(contentResolver, it, "recipe", null)
                 selectedImageUri = Uri.parse(uri)
-                findViewById<ImageView>(R.id.image_preview).setImageBitmap(it)
+                Glide.with(this)
+                    .load(it)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .error(android.R.drawable.ic_menu_report_image)
+                    .into(findViewById(R.id.image_preview))
             } catch (e: Exception) {
-                Toast.makeText(this, "Image save failed", Toast.LENGTH_SHORT).show()
+                Snackbar.make(findViewById(android.R.id.content), "Image save failed", Snackbar.LENGTH_LONG).show()
+                findViewById<ImageView>(R.id.image_preview).setImageResource(android.R.drawable.ic_menu_report_image)
             }
         }
     }
@@ -129,7 +135,11 @@ class AddRecipeActivity : AppCompatActivity() {
             stepAdapter.notifyDataSetChanged()
             recipe.imageUri?.let { uriStr ->
                 selectedImageUri = Uri.parse(uriStr)
-                findViewById<ImageView>(R.id.image_preview).setImageURI(selectedImageUri)
+                Glide.with(this)
+                    .load(selectedImageUri)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .error(android.R.drawable.ic_menu_report_image)
+                    .into(findViewById(R.id.image_preview))
             }
         } ?: startWizard()
 

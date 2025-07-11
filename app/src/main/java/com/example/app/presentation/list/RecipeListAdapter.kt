@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import com.bumptech.glide.Glide
 import androidx.recyclerview.widget.RecyclerView
 import com.example.app.R
 import com.example.app.domain.model.Recipe
@@ -45,11 +46,12 @@ class RecipeListAdapter(
 
         fun bind(recipe: Recipe) {
             name.text = recipe.name
-            if (recipe.imageUri != null) {
-                image.setImageURI(android.net.Uri.parse(recipe.imageUri))
-            } else {
-                image.setImageResource(recipe.imageRes)
-            }
+            val source = recipe.imageUri ?: recipe.imageRes
+            Glide.with(image.context)
+                .load(source)
+                .placeholder(recipe.imageRes)
+                .error(android.R.drawable.ic_menu_report_image)
+                .into(image)
         }
     }
 }
