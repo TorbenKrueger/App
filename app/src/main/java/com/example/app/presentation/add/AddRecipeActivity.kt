@@ -22,6 +22,7 @@ import com.example.app.domain.model.StepIngredient
 import com.example.app.presentation.add.steps.StepAdapter
 import com.example.app.domain.util.getDefaultUnit
 import com.example.app.domain.util.setDefaultUnit
+import com.example.app.domain.util.loadScaledBitmap
 import com.example.app.domain.usecase.AddRecipeUseCase
 import com.example.app.domain.usecase.GetRecipeUseCase
 import com.example.app.domain.usecase.UpdateRecipeUseCase
@@ -62,16 +63,29 @@ class AddRecipeActivity : AppCompatActivity() {
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
-            selectedImageUri = it
-            findViewById<ImageView>(R.id.image_preview).setImageURI(it)
+            try {
+                val bmp = loadScaledBitmap(this, it)
+                selectedImageUri = it
+                if (bmp != null) {
+                    findViewById<ImageView>(R.id.image_preview).setImageBitmap(bmp)
+                } else {
+                    findViewById<ImageView>(R.id.image_preview).setImageURI(it)
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Image load failed", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     private val takePhotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp: Bitmap? ->
         bmp?.let {
-            val uri = MediaStore.Images.Media.insertImage(contentResolver, it, "recipe", null)
-            selectedImageUri = Uri.parse(uri)
-            findViewById<ImageView>(R.id.image_preview).setImageURI(selectedImageUri)
+            try {
+                val uri = MediaStore.Images.Media.insertImage(contentResolver, it, "recipe", null)
+                selectedImageUri = Uri.parse(uri)
+                findViewById<ImageView>(R.id.image_preview).setImageBitmap(it)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Image save failed", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
