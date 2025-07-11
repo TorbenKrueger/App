@@ -107,8 +107,9 @@ class AddRecipeActivity : AppCompatActivity() {
 
     private fun openCamera() {
         val file = java.io.File.createTempFile("recipe_", ".jpg", cacheDir)
-        photoUri = FileProvider.getUriForFile(this, "${applicationContext.packageName}.fileprovider", file)
-        takePhotoLauncher.launch(photoUri)
+        val uri = FileProvider.getUriForFile(this, "${applicationContext.packageName}.fileprovider", file)
+        photoUri = uri
+        takePhotoLauncher.launch(uri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
