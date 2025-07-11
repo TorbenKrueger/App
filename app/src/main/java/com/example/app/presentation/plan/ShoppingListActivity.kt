@@ -17,6 +17,10 @@ import com.example.app.presentation.plan.adapter.ShoppingAdapter
  */
 class ShoppingListActivity : AppCompatActivity() {
 
+    companion object {
+        const val EXTRA_LIST = "shopping_list"
+    }
+
     private val items = mutableListOf<ShoppingItem>()
     private val recent = mutableListOf<ShoppingItem>()
 
