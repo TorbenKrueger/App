@@ -23,6 +23,7 @@ import com.example.app.domain.usecase.DeleteRecipeUseCase
 import com.example.app.domain.usecase.UpdateRecipeUseCase
 import com.example.app.domain.model.Step
 import com.example.app.domain.model.Ingredient
+import com.example.app.domain.model.Recipe
 import com.example.app.presentation.detail.adapter.IngredientAdapter
 import com.example.app.presentation.detail.adapter.StepEditAdapter
 
