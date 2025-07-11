@@ -38,6 +38,10 @@ class ShoppingAdapter(
         holder.details.text = details
         holder.check.isChecked = item.isSelected
         holder.itemView.setOnClickListener { onItemClick(position) }
+        holder.itemView.setOnLongClickListener {
+            onEdit(it, position)
+            true
+        }
         holder.check.setOnCheckedChangeListener { _, checked -> onChecked(position, checked) }
         holder.menu.setOnClickListener { onEdit(it, position) }
     }
