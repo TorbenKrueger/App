@@ -3,10 +3,11 @@ package com.example.app.presentation.plan
 import android.os.Bundle
 import android.view.View
 import android.widget.*
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.example.app.R
 import com.example.app.ServiceLocator
 import com.example.app.domain.model.ShoppingItem
@@ -41,16 +42,21 @@ class ShoppingListActivity : AppCompatActivity() {
             )
         }
 
+        importFromExtras(intent.getStringExtra(EXTRA_LIST) ?: ServiceLocator.shoppingList)
+        applySort()
+
         itemAdapter = ShoppingAdapter(items, { onItemClicked(it, false) }, { view, pos -> showEditDialog(view, pos, false) }, ::onItemChecked)
         recentAdapter = ShoppingAdapter(recent, { onItemClicked(it, true) }, { view, pos -> showEditDialog(view, pos, true) }, ::onRecentChecked)
 
         findViewById<RecyclerView>(R.id.shopping_list).apply {
             layoutManager = LinearLayoutManager(this@ShoppingListActivity)
             adapter = itemAdapter
+            addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
         }
         findViewById<RecyclerView>(R.id.recent_list).apply {
             layoutManager = LinearLayoutManager(this@ShoppingListActivity)
             adapter = recentAdapter
+            addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
         }
 
         val sortSpinner = findViewById<Spinner>(R.id.sort_spinner)
@@ -104,31 +110,27 @@ class ShoppingListActivity : AppCompatActivity() {
 
     private fun showEditDialog(anchor: View, position: Int, fromRecent: Boolean) {
         val item = if (fromRecent) recent[position] else items[position]
-        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val qty = EditText(this).apply { hint = "Quantity"; setText(item.quantity) }
-        val notes = EditText(this).apply { hint = "Notes"; setText(item.notes) }
-        val remind = CheckBox(this).apply {
-            text = "Reminder"
-            isChecked = item.remind
-        }
-        layout.addView(qty)
-        layout.addView(notes)
-        layout.addView(remind)
-        AlertDialog.Builder(this)
-            .setTitle("Edit Item")
-            .setView(layout)
-            .setPositiveButton("OK") { _, _ ->
-                item.quantity = qty.text.toString()
-                item.notes = notes.text.toString()
-                item.remind = remind.isChecked
-                if (item.remind) {
-                    val msg = getString(R.string.reminder_set, item.name)
-                    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                }
-                applySort()
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_edit_item, null)
+        val qty = view.findViewById<EditText>(R.id.edit_quantity)
+        val notes = view.findViewById<EditText>(R.id.edit_notes)
+        val remind = view.findViewById<CheckBox>(R.id.check_remind)
+        qty.setText(item.quantity)
+        notes.setText(item.notes)
+        remind.isChecked = item.remind
+        view.findViewById<Button>(R.id.save_button).setOnClickListener {
+            item.quantity = qty.text.toString()
+            item.notes = notes.text.toString()
+            item.remind = remind.isChecked
+            if (item.remind) {
+                val msg = getString(R.string.reminder_set, item.name)
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+            applySort()
+            dialog.dismiss()
+        }
+        dialog.setContentView(view)
+        dialog.show()
     }
 
     private fun moveSelected() {
@@ -147,6 +149,24 @@ class ShoppingListActivity : AppCompatActivity() {
         items.removeAll { it.isSelected }
         recent.removeAll { it.isSelected }
         applySort()
+    }
+
+    private fun importFromExtras(text: String?) {
+        if (text.isNullOrBlank()) return
+        text.lines().forEach { line ->
+            val parts = line.split(":")
+            if (parts.size == 2) {
+                val name = parts[0].trim()
+                val qty = parts[1].trim()
+                val existing = (items + recent).find { it.name == name }
+                if (existing == null) {
+                    val id = (items + recent).maxOfOrNull { it.id }?.plus(1) ?: 1
+                    items += ShoppingItem(id, name, qty)
+                } else {
+                    existing.quantity = qty
+                }
+            }
+        }
     }
 
     private fun applySort() {

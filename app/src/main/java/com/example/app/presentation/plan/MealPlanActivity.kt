@@ -2,6 +2,7 @@ package com.example.app.presentation.plan
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
@@ -39,35 +40,26 @@ class MealPlanActivity : AppCompatActivity() {
                 personSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, (1..10).toList())
                 container.addView(row)
                 selections += Selection(recipeSpinner, personSpinner)
+                val listener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>, view: View?, pos: Int, id: Long) {
+                        updateShoppingList()
+                    }
+                    override fun onNothingSelected(parent: AdapterView<*>) {}
+                }
+                recipeSpinner.onItemSelectedListener = listener
+                personSpinner.onItemSelectedListener = listener
             }
         }
 
         findViewById<Button>(R.id.clear_button).setOnClickListener {
             selections.forEach { it.recipeSpinner.setSelection(0); it.personSpinner.setSelection(0) }
+            updateShoppingList()
         }
 
         findViewById<Button>(R.id.create_list_button).setOnClickListener {
-            val totals = mutableMapOf<String, Pair<String, Double>>()
-            selections.forEach { sel ->
-                val index = sel.recipeSpinner.selectedItemPosition - 1
-                if (index >= 0) {
-                    val persons = sel.personSpinner.selectedItem as Int
-                    val recipe = recipes[index]
-                    recipe.ingredients.forEach { ing ->
-                        val amount = ing.quantityPerServing * persons
-                        val entry = totals[ing.name]
-                        if (entry == null) {
-                            totals[ing.name] = ing.unit to amount
-                        } else {
-                            totals[ing.name] = entry.first to (entry.second + amount)
-                        }
-                    }
-                }
-            }
-            val listText = totals.entries.joinToString("\n") { "${it.key}: ${it.value.second} ${it.value.first}" }
-            ServiceLocator.shoppingList = listText
+            updateShoppingList()
             val intent = Intent(this, ShoppingListActivity::class.java)
-            intent.putExtra(ShoppingListActivity.EXTRA_LIST, listText)
+            intent.putExtra(ShoppingListActivity.EXTRA_LIST, ServiceLocator.shoppingList)
             startActivity(intent)
         }
 
@@ -80,5 +72,26 @@ class MealPlanActivity : AppCompatActivity() {
             intent.putExtra(ShoppingListActivity.EXTRA_LIST, ServiceLocator.shoppingList)
             startActivity(intent)
         }
+    }
+
+    private fun updateShoppingList() {
+        val totals = mutableMapOf<String, Pair<String, Double>>()
+        selections.forEach { sel ->
+            val index = sel.recipeSpinner.selectedItemPosition - 1
+            if (index >= 0) {
+                val persons = sel.personSpinner.selectedItem as Int
+                val recipe = recipes[index]
+                recipe.ingredients.forEach { ing ->
+                    val amount = ing.quantityPerServing * persons
+                    val entry = totals[ing.name]
+                    if (entry == null) {
+                        totals[ing.name] = ing.unit to amount
+                    } else {
+                        totals[ing.name] = entry.first to (entry.second + amount)
+                    }
+                }
+            }
+        }
+        ServiceLocator.shoppingList = totals.entries.joinToString("\n") { "${it.key}: ${it.value.second} ${it.value.first}" }
     }
 }
