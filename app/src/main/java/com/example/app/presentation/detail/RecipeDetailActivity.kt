@@ -78,6 +78,7 @@ class RecipeDetailActivity : AppCompatActivity() {
         val image = findViewById<ImageView>(R.id.dish_image)
         val ingredientsView = findViewById<RecyclerView>(R.id.ingredients_list)
         val stepsView = findViewById<RecyclerView>(R.id.steps_list)
+        val addStepButton = findViewById<Button>(R.id.add_step_button)
         val editSwitch = findViewById<SwitchCompat>(R.id.edit_switch)
 
         nameView.setOnClickListener {
@@ -97,6 +98,7 @@ class RecipeDetailActivity : AppCompatActivity() {
         stepAdapter = StepEditAdapter(mutableListOf()) { view, index, step ->
             if (editMode) showStepMenu(view, index, step)
         }
+        stepAdapter.showHandles = editMode
         stepsView.layoutManager = LinearLayoutManager(this)
         stepsView.adapter = stepAdapter
 
@@ -114,6 +116,14 @@ class RecipeDetailActivity : AppCompatActivity() {
         })
         itemTouchHelper.attachToRecyclerView(stepsView)
 
+        addStepButton.setOnClickListener {
+            if (editMode) {
+                showStepDialog(Step("", emptyList())) { newStep ->
+                    stepAdapter.addStep(newStep)
+                }
+            }
+        }
+
         viewModel.recipe.observe(this) { recipe ->
             currentRecipe = recipe
             populateFields(recipe)
@@ -130,6 +140,7 @@ class RecipeDetailActivity : AppCompatActivity() {
                 editMode = true
                 nameView.visibility = View.VISIBLE
                 nameEdit.visibility = View.GONE
+                addStepButton.visibility = View.VISIBLE
             } else {
                 editMode = false
                 val recipe = currentRecipe ?: return@setOnCheckedChangeListener
@@ -141,6 +152,7 @@ class RecipeDetailActivity : AppCompatActivity() {
                 )
                 nameView.visibility = View.VISIBLE
                 nameEdit.visibility = View.GONE
+                addStepButton.visibility = View.GONE
                 if (updated != recipe) {
                     android.app.AlertDialog.Builder(this)
                         .setMessage("Save changes?")
@@ -155,6 +167,8 @@ class RecipeDetailActivity : AppCompatActivity() {
                     populateFields(recipe)
                 }
             }
+            stepAdapter.showHandles = editMode
+            stepAdapter.notifyDataSetChanged()
         }
 
         image.setOnClickListener {
@@ -259,6 +273,7 @@ class RecipeDetailActivity : AppCompatActivity() {
         stepAdapter = StepEditAdapter(recipe.steps.toMutableList()) { view, index, step ->
             if (editMode) showStepMenu(view, index, step)
         }
+        stepAdapter.showHandles = editMode
         findViewById<RecyclerView>(R.id.steps_list).adapter = stepAdapter
     }
 

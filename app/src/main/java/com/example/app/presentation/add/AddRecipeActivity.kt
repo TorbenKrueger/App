@@ -82,6 +82,7 @@ class AddRecipeActivity : AppCompatActivity() {
         ingredientsTable = findViewById(R.id.ingredients_table)
 
         stepAdapter = StepAdapter(steps)
+        stepAdapter.showHandles = editMode
         val stepsView = findViewById<RecyclerView>(R.id.steps_list)
         stepsView.adapter = stepAdapter
 
@@ -142,6 +143,8 @@ class AddRecipeActivity : AppCompatActivity() {
             editMode = !editMode
             toggleEdit.text = if (editMode) "Fertig" else "Schritte bearbeiten"
             addStepButton.visibility = if (editMode) View.VISIBLE else View.GONE
+            stepAdapter.showHandles = editMode
+            stepAdapter.notifyDataSetChanged()
         }
 
         addStepButton.setOnClickListener { showStepDialog() }

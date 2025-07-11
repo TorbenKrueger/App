@@ -14,6 +14,9 @@ class StepEditAdapter(
     private val onClick: (View, Int, Step) -> Unit
 ) : RecyclerView.Adapter<StepEditAdapter.StepViewHolder>() {
 
+    /** Whether drag handles should be shown. */
+    var showHandles: Boolean = false
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StepViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_step, parent, false)
         return StepViewHolder(view)
@@ -23,7 +26,8 @@ class StepEditAdapter(
 
     override fun onBindViewHolder(holder: StepViewHolder, position: Int) {
         val step = items[position]
-        holder.text.text = step.description
+        holder.text.text = "${position + 1}. ${step.description}"
+        holder.handle.visibility = if (showHandles) View.VISIBLE else View.GONE
         holder.itemView.setOnClickListener { onClick(holder.itemView, position, step) }
     }
 
@@ -44,9 +48,15 @@ class StepEditAdapter(
         notifyItemRemoved(index)
     }
 
+    fun addStep(step: Step) {
+        items.add(step)
+        notifyItemInserted(items.size - 1)
+    }
+
     fun getSteps(): List<Step> = items.toList()
 
     class StepViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val text: TextView = view.findViewById(R.id.step_text)
+        val handle: View = view.findViewById(R.id.drag_handle)
     }
 }

@@ -12,6 +12,9 @@ import com.example.app.R
  */
 class StepAdapter(private val items: MutableList<String>) : RecyclerView.Adapter<StepAdapter.StepViewHolder>() {
 
+    /** Whether drag handles should be shown. */
+    var showHandles: Boolean = false
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StepViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_step, parent, false)
         return StepViewHolder(view)
@@ -21,6 +24,7 @@ class StepAdapter(private val items: MutableList<String>) : RecyclerView.Adapter
 
     override fun onBindViewHolder(holder: StepViewHolder, position: Int) {
         holder.text.text = "${position + 1}. ${items[position]}"
+        holder.handle.visibility = if (showHandles) View.VISIBLE else View.GONE
     }
 
     fun swap(from: Int, to: Int) {
