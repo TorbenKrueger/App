@@ -34,6 +34,7 @@ class HomeActivity : AppCompatActivity() {
 
     fun setCurrentPage(index: Int, smooth: Boolean = true) {
         viewPager.setCurrentItem(index, smooth)
+        updateNavButtons(index)
     }
 
     private fun updateNavButtons(index: Int) {
