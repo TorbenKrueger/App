@@ -54,6 +54,11 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.nav_plan).setOnClickListener {
             startActivity(Intent(this, com.example.app.presentation.plan.MealPlanActivity::class.java))
         }
+        findViewById<Button>(R.id.nav_shopping).setOnClickListener {
+            val intent = Intent(this, com.example.app.presentation.plan.ShoppingListActivity::class.java)
+            intent.putExtra(com.example.app.presentation.plan.ShoppingListActivity.EXTRA_LIST, ServiceLocator.shoppingList)
+            startActivity(intent)
+        }
 
         viewModel.recipes.observe(this) { adapter.submitList(it) }
         viewModel.loadRecipes()
