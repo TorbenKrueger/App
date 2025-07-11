@@ -8,4 +8,5 @@
     <string name="recipes">Recipes</string>
     <string name="meal_plan">Meal Plan</string>
     <string name="shopping_list">Shopping List</string>
+    <string name="ingredients_heading">Ingredients</string>
 </resources>
