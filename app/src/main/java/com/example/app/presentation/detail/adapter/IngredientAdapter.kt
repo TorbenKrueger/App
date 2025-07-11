@@ -23,7 +23,8 @@ class IngredientAdapter(
 
     override fun onBindViewHolder(holder: IngredientViewHolder, position: Int) {
         val ing = items[position]
-        holder.name.text = ing.name
+        val text = "${ing.quantityPerServing.toInt()} ${ing.unit} ${ing.name}"
+        holder.name.text = text
         holder.itemView.setOnClickListener { onClick(holder.itemView, position, ing) }
     }
 
