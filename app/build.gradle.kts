@@ -49,6 +49,9 @@ dependencies {
     // RecyclerView for lists
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
+    // ViewPager2 for swipe navigation
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
+
     // Asynchronous image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
