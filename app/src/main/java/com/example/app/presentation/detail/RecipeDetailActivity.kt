@@ -1,19 +1,30 @@
 package com.example.app.presentation.detail
 
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import android.provider.MediaStore
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.widget.PopupMenu
+import androidx.appcompat.widget.SwitchCompat
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.app.R
 import com.example.app.ServiceLocator
 import com.example.app.domain.usecase.GetRecipeUseCase
 import com.example.app.domain.usecase.DeleteRecipeUseCase
-import com.example.app.presentation.add.AddRecipeActivity
+import com.example.app.domain.usecase.UpdateRecipeUseCase
 import com.example.app.domain.model.Step
+import com.example.app.domain.model.Ingredient
+import com.example.app.presentation.detail.adapter.IngredientAdapter
+import com.example.app.presentation.detail.adapter.StepEditAdapter
 
 /**
  * Displays details for a selected recipe.
@@ -25,9 +36,32 @@ class RecipeDetailActivity : AppCompatActivity() {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 val get = GetRecipeUseCase(ServiceLocator.recipeRepository)
                 val delete = DeleteRecipeUseCase(ServiceLocator.recipeRepository)
+                val update = UpdateRecipeUseCase(ServiceLocator.recipeRepository)
                 @Suppress("UNCHECKED_CAST")
-                return RecipeDetailViewModel(get, delete) as T
+                return RecipeDetailViewModel(get, delete, update) as T
             }
+        }
+    }
+
+    private lateinit var ingredientAdapter: IngredientAdapter
+    private lateinit var stepAdapter: StepEditAdapter
+    private lateinit var itemTouchHelper: ItemTouchHelper
+
+    private var selectedImageUri: Uri? = null
+    private var editMode = false
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            selectedImageUri = it
+            findViewById<ImageView>(R.id.dish_image).setImageURI(it)
+        }
+    }
+
+    private val takePhotoLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp: Bitmap? ->
+        bmp?.let {
+            val uri = MediaStore.Images.Media.insertImage(contentResolver, it, "recipe", null)
+            selectedImageUri = Uri.parse(uri)
+            findViewById<ImageView>(R.id.dish_image).setImageURI(selectedImageUri)
         }
     }
 
@@ -36,26 +70,49 @@ class RecipeDetailActivity : AppCompatActivity() {
         setContentView(R.layout.activity_recipe_detail)
 
         val id = intent.getIntExtra(EXTRA_RECIPE_ID, -1)
+
+        val nameView = findViewById<TextView>(R.id.dish_name_view)
+        val nameEdit = findViewById<EditText>(R.id.dish_name_edit)
+        val image = findViewById<ImageView>(R.id.dish_image)
+        val ingredientsView = findViewById<RecyclerView>(R.id.ingredients_list)
+        val stepsView = findViewById<RecyclerView>(R.id.steps_list)
+        val editSwitch = findViewById<SwitchCompat>(R.id.edit_switch)
+
+        ingredientAdapter = IngredientAdapter(mutableListOf()) { view, index, ingredient ->
+            if (editMode) showIngredientMenu(view, index, ingredient)
+        }
+        ingredientsView.layoutManager = LinearLayoutManager(this)
+        ingredientsView.adapter = ingredientAdapter
+
+        stepAdapter = StepEditAdapter(mutableListOf())
+        stepsView.layoutManager = LinearLayoutManager(this)
+        stepsView.adapter = stepAdapter
+
+        itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+                val from = viewHolder.adapterPosition
+                val to = target.adapterPosition
+                stepAdapter.swap(from, to)
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+
+            override fun isLongPressDragEnabled(): Boolean = editMode
+        })
+        itemTouchHelper.attachToRecyclerView(stepsView)
+
         viewModel.recipe.observe(this) { recipe ->
             title = recipe.name
+            nameView.text = recipe.name
+            nameEdit.setText(recipe.name)
+            selectedImageUri = recipe.imageUri?.let { Uri.parse(it) }
+            if (selectedImageUri != null) image.setImageURI(selectedImageUri) else image.setImageResource(recipe.imageRes)
+
             findViewById<TextView>(R.id.servings_value).text = recipe.servings.toString()
-
-            val ingredientLayout = findViewById<LinearLayout>(R.id.ingredient_container)
-            ingredientLayout.removeAllViews()
-            recipe.ingredients.forEach { ingredient ->
-                val tv = TextView(this)
-                val amount = (ingredient.quantityPerServing * recipe.servings).toInt()
-                tv.text = "${ingredient.name}: $amount ${ingredient.unit}"
-                ingredientLayout.addView(tv)
-            }
-
-            val stepLayout = findViewById<LinearLayout>(R.id.step_container)
-            stepLayout.removeAllViews()
-            recipe.steps.forEach { step ->
-                val stepTv = TextView(this)
-                stepTv.text = formatStep(step, recipe.servings)
-                stepLayout.addView(stepTv)
-            }
+            ingredientAdapter.setItems(recipe.ingredients)
+            stepAdapter = StepEditAdapter(recipe.steps.toMutableList())
+            stepsView.adapter = stepAdapter
         }
 
         findViewById<TextView>(R.id.update_servings).setOnClickListener {
@@ -64,10 +121,36 @@ class RecipeDetailActivity : AppCompatActivity() {
             viewModel.updateServings(newServings)
         }
 
-        findViewById<Button>(R.id.edit_button).setOnClickListener {
-            val intent = Intent(this, AddRecipeActivity::class.java)
-            intent.putExtra(AddRecipeActivity.EXTRA_RECIPE_ID, id)
-            startActivity(intent)
+        editSwitch.setOnCheckedChangeListener { _, isChecked ->
+            editMode = isChecked
+            nameView.visibility = if (isChecked) View.GONE else View.VISIBLE
+            nameEdit.visibility = if (isChecked) View.VISIBLE else View.GONE
+            if (!isChecked) {
+                val recipe = viewModel.recipe.value ?: return@setOnCheckedChangeListener
+                val updated = recipe.copy(
+                    name = nameEdit.text.toString(),
+                    imageUri = selectedImageUri?.toString(),
+                    ingredients = ingredientAdapter.getItems(),
+                    steps = stepAdapter.getSteps()
+                )
+                viewModel.updateRecipe(updated)
+            }
+        }
+
+        image.setOnClickListener {
+            if (!editMode) return@setOnClickListener
+            PopupMenu(this, it).apply {
+                menu.add("Camera")
+                menu.add("Gallery")
+                setOnMenuItemClickListener { item ->
+                    when (item.title) {
+                        "Camera" -> takePhotoLauncher.launch(null)
+                        "Gallery" -> pickImageLauncher.launch("image/*")
+                    }
+                    true
+                }
+                show()
+            }
         }
 
         findViewById<Button>(R.id.delete_button).setOnClickListener {
@@ -88,6 +171,57 @@ class RecipeDetailActivity : AppCompatActivity() {
             text = text.replace(token, "$amount ${si.ingredient.unit}", ignoreCase = true)
         }
         return text
+    }
+
+    private fun showIngredientMenu(anchor: View, index: Int, ingredient: Ingredient) {
+        PopupMenu(this, anchor).apply {
+            menu.add("Edit")
+            menu.add("Delete")
+            setOnMenuItemClickListener { item ->
+                when (item.title) {
+                    "Edit" -> showIngredientDialog(ingredient) { updated ->
+                        ingredientAdapter.update(index, updated)
+                    }
+                    "Delete" -> ingredientAdapter.remove(index)
+                }
+                true
+            }
+            show()
+        }
+    }
+
+    private fun showIngredientDialog(current: Ingredient?, onResult: (Ingredient) -> Unit) {
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.VERTICAL
+
+        val nameInput = EditText(this)
+        nameInput.hint = "Name"
+        val qtyInput = EditText(this)
+        qtyInput.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        qtyInput.hint = "Menge"
+        val unitInput = EditText(this)
+        unitInput.hint = "Einheit"
+
+        current?.let {
+            nameInput.setText(it.name)
+            qtyInput.setText(it.quantityPerServing.toInt().toString())
+            unitInput.setText(it.unit)
+        }
+
+        layout.addView(nameInput)
+        layout.addView(qtyInput)
+        layout.addView(unitInput)
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle(if (current == null) "Ingredient" else "Edit Ingredient")
+            .setView(layout)
+            .setPositiveButton("OK") { _, _ ->
+                val qty = qtyInput.text.toString().toIntOrNull() ?: 0
+                val ing = Ingredient(nameInput.text.toString(), unitInput.text.toString(), qty.toDouble())
+                onResult(ing)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     companion object {

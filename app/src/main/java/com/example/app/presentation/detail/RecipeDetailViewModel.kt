@@ -6,13 +6,15 @@ import androidx.lifecycle.ViewModel
 import com.example.app.domain.model.Recipe
 import com.example.app.domain.usecase.GetRecipeUseCase
 import com.example.app.domain.usecase.DeleteRecipeUseCase
+import com.example.app.domain.usecase.UpdateRecipeUseCase
 
 /**
  * ViewModel for displaying a single recipe.
  */
 class RecipeDetailViewModel(
     private val getRecipe: GetRecipeUseCase,
-    private val deleteRecipeUseCase: DeleteRecipeUseCase
+    private val deleteRecipeUseCase: DeleteRecipeUseCase,
+    private val updateRecipeUseCase: UpdateRecipeUseCase
 ) : ViewModel() {
 
     private val _recipe = MutableLiveData<Recipe>()
@@ -31,5 +33,10 @@ class RecipeDetailViewModel(
 
     fun deleteRecipe(id: Int) {
         deleteRecipeUseCase(id)
+    }
+
+    fun updateRecipe(recipe: Recipe) {
+        updateRecipeUseCase(recipe)
+        _recipe.value = recipe
     }
 }
