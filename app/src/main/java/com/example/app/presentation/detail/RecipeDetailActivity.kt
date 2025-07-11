@@ -49,6 +49,7 @@ class RecipeDetailActivity : AppCompatActivity() {
 
     private var selectedImageUri: Uri? = null
     private var editMode = false
+    private var currentRecipe: Recipe? = null
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -78,13 +79,23 @@ class RecipeDetailActivity : AppCompatActivity() {
         val stepsView = findViewById<RecyclerView>(R.id.steps_list)
         val editSwitch = findViewById<SwitchCompat>(R.id.edit_switch)
 
+        nameView.setOnClickListener {
+            if (editMode) {
+                nameView.visibility = View.GONE
+                nameEdit.visibility = View.VISIBLE
+                nameEdit.requestFocus()
+            }
+        }
+
         ingredientAdapter = IngredientAdapter(mutableListOf()) { view, index, ingredient ->
             if (editMode) showIngredientMenu(view, index, ingredient)
         }
         ingredientsView.layoutManager = LinearLayoutManager(this)
         ingredientsView.adapter = ingredientAdapter
 
-        stepAdapter = StepEditAdapter(mutableListOf())
+        stepAdapter = StepEditAdapter(mutableListOf()) { view, index, step ->
+            if (editMode) showStepMenu(view, index, step)
+        }
         stepsView.layoutManager = LinearLayoutManager(this)
         stepsView.adapter = stepAdapter
 
@@ -103,16 +114,8 @@ class RecipeDetailActivity : AppCompatActivity() {
         itemTouchHelper.attachToRecyclerView(stepsView)
 
         viewModel.recipe.observe(this) { recipe ->
-            title = recipe.name
-            nameView.text = recipe.name
-            nameEdit.setText(recipe.name)
-            selectedImageUri = recipe.imageUri?.let { Uri.parse(it) }
-            if (selectedImageUri != null) image.setImageURI(selectedImageUri) else image.setImageResource(recipe.imageRes)
-
-            findViewById<TextView>(R.id.servings_value).text = recipe.servings.toString()
-            ingredientAdapter.setItems(recipe.ingredients)
-            stepAdapter = StepEditAdapter(recipe.steps.toMutableList())
-            stepsView.adapter = stepAdapter
+            currentRecipe = recipe
+            populateFields(recipe)
         }
 
         findViewById<TextView>(R.id.update_servings).setOnClickListener {
@@ -122,18 +125,34 @@ class RecipeDetailActivity : AppCompatActivity() {
         }
 
         editSwitch.setOnCheckedChangeListener { _, isChecked ->
-            editMode = isChecked
-            nameView.visibility = if (isChecked) View.GONE else View.VISIBLE
-            nameEdit.visibility = if (isChecked) View.VISIBLE else View.GONE
-            if (!isChecked) {
-                val recipe = viewModel.recipe.value ?: return@setOnCheckedChangeListener
+            if (isChecked) {
+                editMode = true
+                nameView.visibility = View.VISIBLE
+                nameEdit.visibility = View.GONE
+            } else {
+                editMode = false
+                val recipe = currentRecipe ?: return@setOnCheckedChangeListener
                 val updated = recipe.copy(
                     name = nameEdit.text.toString(),
                     imageUri = selectedImageUri?.toString(),
                     ingredients = ingredientAdapter.getItems(),
                     steps = stepAdapter.getSteps()
                 )
-                viewModel.updateRecipe(updated)
+                nameView.visibility = View.VISIBLE
+                nameEdit.visibility = View.GONE
+                if (updated != recipe) {
+                    android.app.AlertDialog.Builder(this)
+                        .setMessage("Save changes?")
+                        .setPositiveButton("Yes") { _, _ ->
+                            viewModel.updateRecipe(updated)
+                        }
+                        .setNegativeButton("No") { _, _ ->
+                            populateFields(recipe)
+                        }
+                        .show()
+                } else {
+                    populateFields(recipe)
+                }
             }
         }
 
@@ -219,6 +238,54 @@ class RecipeDetailActivity : AppCompatActivity() {
                 val qty = qtyInput.text.toString().toIntOrNull() ?: 0
                 val ing = Ingredient(nameInput.text.toString(), unitInput.text.toString(), qty.toDouble())
                 onResult(ing)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun populateFields(recipe: Recipe) {
+        val nameView = findViewById<TextView>(R.id.dish_name_view)
+        val nameEdit = findViewById<EditText>(R.id.dish_name_edit)
+        val image = findViewById<ImageView>(R.id.dish_image)
+        title = recipe.name
+        nameView.text = recipe.name
+        nameEdit.setText(recipe.name)
+        selectedImageUri = recipe.imageUri?.let { Uri.parse(it) }
+        if (selectedImageUri != null) image.setImageURI(selectedImageUri) else image.setImageResource(recipe.imageRes)
+
+        findViewById<TextView>(R.id.servings_value).text = recipe.servings.toString()
+        ingredientAdapter.setItems(recipe.ingredients)
+        stepAdapter = StepEditAdapter(recipe.steps.toMutableList()) { view, index, step ->
+            if (editMode) showStepMenu(view, index, step)
+        }
+        findViewById<RecyclerView>(R.id.steps_list).adapter = stepAdapter
+    }
+
+    private fun showStepMenu(anchor: View, index: Int, step: Step) {
+        PopupMenu(this, anchor).apply {
+            menu.add("Edit")
+            menu.add("Delete")
+            setOnMenuItemClickListener { item ->
+                when (item.title) {
+                    "Edit" -> showStepDialog(step) { updated ->
+                        stepAdapter.update(index, updated)
+                    }
+                    "Delete" -> stepAdapter.remove(index)
+                }
+                true
+            }
+            show()
+        }
+    }
+
+    private fun showStepDialog(current: Step, onResult: (Step) -> Unit) {
+        val input = EditText(this)
+        input.setText(current.description)
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Edit Step")
+            .setView(input)
+            .setPositiveButton("OK") { _, _ ->
+                onResult(current.copy(description = input.text.toString()))
             }
             .setNegativeButton("Cancel", null)
             .show()

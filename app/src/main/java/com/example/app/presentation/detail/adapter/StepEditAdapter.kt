@@ -9,7 +9,10 @@ import com.example.app.R
 import com.example.app.domain.model.Step
 
 /** Adapter for editing steps with drag-and-drop support. */
-class StepEditAdapter(private val items: MutableList<Step>) : RecyclerView.Adapter<StepEditAdapter.StepViewHolder>() {
+class StepEditAdapter(
+    private val items: MutableList<Step>,
+    private val onClick: (View, Int, Step) -> Unit
+) : RecyclerView.Adapter<StepEditAdapter.StepViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StepViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_step, parent, false)
@@ -19,7 +22,9 @@ class StepEditAdapter(private val items: MutableList<Step>) : RecyclerView.Adapt
     override fun getItemCount(): Int = items.size
 
     override fun onBindViewHolder(holder: StepViewHolder, position: Int) {
-        holder.text.text = items[position].description
+        val step = items[position]
+        holder.text.text = step.description
+        holder.itemView.setOnClickListener { onClick(holder.itemView, position, step) }
     }
 
     fun swap(from: Int, to: Int) {
@@ -27,6 +32,16 @@ class StepEditAdapter(private val items: MutableList<Step>) : RecyclerView.Adapt
         val item = items.removeAt(from)
         items.add(to, item)
         notifyItemMoved(from, to)
+    }
+
+    fun update(index: Int, step: Step) {
+        items[index] = step
+        notifyItemChanged(index)
+    }
+
+    fun remove(index: Int) {
+        items.removeAt(index)
+        notifyItemRemoved(index)
     }
 
     fun getSteps(): List<Step> = items.toList()
