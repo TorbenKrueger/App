@@ -9,4 +9,8 @@
     <string name="meal_plan">Meal Plan</string>
     <string name="shopping_list">Shopping List</string>
     <string name="ingredients_heading">Ingredients</string>
+    <string name="add">Add</string>
+    <string name="move_selected">Move Selected</string>
+    <string name="delete_selected">Delete Selected</string>
+    <string name="reminder_set">Reminder set for %1$s</string>
 </resources>
